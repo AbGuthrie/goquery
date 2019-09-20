@@ -10,9 +10,8 @@ import (
 func main() {
     reader := bufio.NewReader(os.Stdin)
     for {
-        fmt.Print("> ")
-		
-		// Read the keyboad input.
+	// Read the keyboad input.
+        fmt.Print("goquery> ")
         input, err := reader.ReadString('\n')
         if err != nil {
             fmt.Fprintln(os.Stderr, err)
@@ -22,17 +21,17 @@ func main() {
 		args := strings.Split(input, " ")			// Separate command and arguments
 
 		switch args[0] {
-		case "connect":
+		case ".connect":
 			if len(args) == 1 {
-				fmt.Printf("Target address required\n")
+				fmt.Printf("Host UUID required\n")
 				continue
 			}
 			fmt.Printf("Connecting to '%s'\n", args[1])
-		case "exit":
+		case ".exit":
 			os.Exit(0)
 		default:
 			// Echo
-			fmt.Printf("Echo %s\n", args[0])
+			fmt.Printf("Unknown Command:  %s\n", args[0])
 		}
     }
 }
