@@ -2,27 +2,32 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 )
 
-type GoQueryCommand func(string) int
+// Errors
+var errArgumentError = errors.New("The arguments provided were incorrect for the command");
+var errRuntimeError = errors.New("There was a problem executing the command");
 
-func connect(cmdline string) int {
+type GoQueryCommand func(string) error
+
+func connect(cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
-		fmt.Printf("Host UUID required\n")
-		return 1
+		fmt.Errorf("Host UUID required\n")
+		return errArgumentError
 	}
 	fmt.Printf("Connecting to '%s'\n", args[1])
-	return 0
+	return nil
 }
 
-func exit(cmdline string) int {
+func exit(cmdline string) error {
 	fmt.Printf("Goodbye!\n")
 	os.Exit(0)
-	return 0
+	return errRuntimeError
 }
 
 func main() {
@@ -43,10 +48,13 @@ func main() {
 		input = strings.TrimSuffix(input, "\n") // Remove the newline character
 		args := strings.Split(input, " ")       // Separate command and arguments
 		if command, ok := commandMap[args[0]]; ok {
-			retcode := command(input)
-			if retcode != 0 {
-				fmt.Printf("%s threw an error!\n", args[0])
+			err := command(input)
+			if err != nil {
+				fmt.Printf("%s: %s!\n", args[0], err.Error())
 			}
+		} else {
+			fmt.Printf("No such command: %s\n", args[0])
+			continue
 		}
 	}
 }
