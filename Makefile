@@ -1,0 +1,2 @@
+format:
+	gofmt -w cmd/

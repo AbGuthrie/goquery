@@ -1,24 +1,24 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "os"
-    "strings"
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
 )
 
 func main() {
-    reader := bufio.NewReader(os.Stdin)
-    for {
-	// Read the keyboad input.
-        fmt.Print("goquery> ")
-        input, err := reader.ReadString('\n')
-        if err != nil {
-            fmt.Fprintln(os.Stderr, err)
-        }
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		// Read the keyboad input.
+		fmt.Print("goquery> ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 
-		input = strings.TrimSuffix(input, "\n")		// Remove the newline character		
-		args := strings.Split(input, " ")			// Separate command and arguments
+		input = strings.TrimSuffix(input, "\n") // Remove the newline character
+		args := strings.Split(input, " ")       // Separate command and arguments
 
 		switch args[0] {
 		case ".connect":
@@ -33,5 +33,5 @@ func main() {
 			// Echo
 			fmt.Printf("Unknown Command:  %s\n", args[0])
 		}
-    }
+	}
 }
