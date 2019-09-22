@@ -2,12 +2,40 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 )
 
+// Errors
+var errArgumentError = errors.New("The arguments provided were incorrect for the command");
+var errRuntimeError = errors.New("There was a problem executing the command");
+
+type GoQueryCommand func(string) error
+
+func connect(cmdline string) error {
+	args := strings.Split(cmdline, " ") // Separate command and arguments
+	if len(args) == 1 {
+		fmt.Errorf("Host UUID required\n")
+		return errArgumentError
+	}
+	fmt.Printf("Connecting to '%s'\n", args[1])
+	return nil
+}
+
+func exit(cmdline string) error {
+	fmt.Printf("Goodbye!\n")
+	os.Exit(0)
+	return errRuntimeError
+}
+
 func main() {
+	// Function Map
+	commandMap := make(map[string]GoQueryCommand)
+	commandMap[".connect"] = connect
+	commandMap[".exit"] = exit
+
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		// Read the keyboad input.
@@ -19,19 +47,14 @@ func main() {
 
 		input = strings.TrimSuffix(input, "\n") // Remove the newline character
 		args := strings.Split(input, " ")       // Separate command and arguments
-
-		switch args[0] {
-		case ".connect":
-			if len(args) == 1 {
-				fmt.Printf("Host UUID required\n")
-				continue
+		if command, ok := commandMap[args[0]]; ok {
+			err := command(input)
+			if err != nil {
+				fmt.Printf("%s: %s!\n", args[0], err.Error())
 			}
-			fmt.Printf("Connecting to '%s'\n", args[1])
-		case ".exit":
-			os.Exit(0)
-		default:
-			// Echo
-			fmt.Printf("Unknown Command:  %s\n", args[0])
+		} else {
+			fmt.Printf("No such command: %s\n", args[0])
+			continue
 		}
 	}
 }
