@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
 	"github.com/AbGuthrie/goquery/commands"
 )
 
