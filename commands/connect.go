@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 	"github.com/AbGuthrie/goquery/api"
+	"strings"
 )
 
 func connect(cmdline string) error {

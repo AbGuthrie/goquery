@@ -1,6 +1,5 @@
 package commands
 
-
 import (
 	"fmt"
 	"os"

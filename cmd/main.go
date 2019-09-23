@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/AbGuthrie/goquery/commands"
 	"os"
 	"strings"
-	"github.com/AbGuthrie/goquery/commands"
 )
 
 func main() {
