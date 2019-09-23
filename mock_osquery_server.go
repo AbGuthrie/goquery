@@ -11,7 +11,7 @@ import (
 )
 
 var ENROLL_SECRET string
-var enrolled_hosts map[string]string
+var enrolledHosts map[string]string
 
 func random_string(length int) string {
 	rand.Seed(time.Now().UnixNano())
@@ -26,37 +26,55 @@ func random_string(length int) string {
 }
 
 func enroll(w http.ResponseWriter, r *http.Request) {
-	var parsed_request map[string]interface{}
-	request_body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Printf("%s\n", err)
+	type enrollPlatformInfo struct {
+		UUID string `json:"uuid"`
 	}
-	json.Unmarshal([]byte(request_body), &parsed_request)
+	type enrollBody struct {
+		EnrollSecret string             `json:"enroll_secret"`
+		PlatformInfo enrollPlatformInfo `json:"platform_info"`
+	}
 
-	if parsed_request["enroll_secret"] == ENROLL_SECRET {
+	parsedBody := enrollBody{}
+	jsonBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Printf("Error reading request body: %s\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = json.Unmarshal(jsonBytes, &parsedBody)
+	if err != nil {
+		fmt.Printf("Error decoding request JSON: %s\n", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if parsedBody.EnrollSecret == ENROLL_SECRET {
 		node_key := random_string(32)
 		fmt.Fprintf(w, "{\"node_key\" : \"%s\"}", node_key)
-		enrolled_hosts[node_key] = "unknown_uuid"
+		enrolledHosts[node_key] = parsedBody.PlatformInfo.UUID
 		fmt.Printf("Enrolled a new host with node_key: %s\n", node_key)
 		return
 	}
-	fmt.Printf("Host provided incorrrect secret: %s\n", parsed_request["enroll_secret"])
+
+	fmt.Printf("Host provided incorrrect secret: %s\n", parsedBody.EnrollSecret)
 	fmt.Fprintf(w, "{\"node_invalid\" : true}")
+	w.WriteHeader(http.StatusBadRequest)
 }
 
-func config(w http.ResponseWriter, r *http.Request)            {}
-func log(w http.ResponseWriter, r *http.Request)               {}
-func distributed_read(w http.ResponseWriter, r *http.Request)  {}
-func distributed_write(w http.ResponseWriter, r *http.Request) {}
+func config(w http.ResponseWriter, r *http.Request)           {}
+func log(w http.ResponseWriter, r *http.Request)              {}
+func distributedRead(w http.ResponseWriter, r *http.Request)  {}
+func distributedWrite(w http.ResponseWriter, r *http.Request) {}
 
 // goquery endpoint functions
-func check_host(w http.ResponseWriter, r *http.Request) {
+func checkHost(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("CheckHost call for: %s", r.FormValue("uuid"))
 }
 
 func main() {
 	ENROLL_SECRET = "somepresharedsecret"
-	enrolled_hosts = make(map[string]string)
+	enrolledHosts = make(map[string]string)
 	// TODO enumerate all required endpoints the osquery server must implement
 
 	// GET status
@@ -68,11 +86,11 @@ func main() {
 	http.HandleFunc("/enroll", enroll)
 	http.HandleFunc("/config", config)
 	http.HandleFunc("/log", log)
-	http.HandleFunc("/distribute_read", distributed_read)
-	http.HandleFunc("/distributed_write", distributed_write)
+	http.HandleFunc("/distribute_read", distributedRead)
+	http.HandleFunc("/distributedWrite", distributedWrite)
 
 	// goquery Endpoints
-	http.HandleFunc("/CheckHost", check_host)
+	http.HandleFunc("/CheckHost", checkHost)
 
 	http.ListenAndServeTLS(":8001", "server.crt", "server.key", nil)
 }
