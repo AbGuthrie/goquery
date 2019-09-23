@@ -2,16 +2,16 @@ package api
 
 import (
 	"fmt"
-	"time"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"io/ioutil"
+	"time"
 )
 
 func init() {}
 
 func CheckHost(uuid string) error {
-	var client = &http.Client {Timeout: time.Second * 10}
+	var client = &http.Client{Timeout: time.Second * 10}
 	response, err := client.PostForm("http://127.0.0.1:8001/CheckHost",
 		url.Values{"uuid": {uuid}},
 	)

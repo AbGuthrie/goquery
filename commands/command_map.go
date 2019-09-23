@@ -13,12 +13,12 @@ var CommandMap map[string]GoQueryCommand
 var errArgumentError error
 var errRuntimeError error
 
-func init(){
+func init() {
 	CommandMap = map[string]GoQueryCommand{
 		".connect": connect,
-		".exit": exit,
+		".exit":    exit,
 	}
 
-	errArgumentError = errors.New("The arguments provided were incorrect for the command");
-	errRuntimeError = errors.New("There was a problem executing the command");
+	errArgumentError = errors.New("The arguments provided were incorrect for the command")
+	errRuntimeError = errors.New("There was a problem executing the command")
 }
