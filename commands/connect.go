@@ -3,9 +3,7 @@ package commands
 import (
 	"fmt"
 	"strings"
-	"time"
-	"net/http"
-	"io/ioutil"
+	"github.com/AbGuthrie/goquery/api"
 )
 
 func connect(cmdline string) error {
@@ -15,21 +13,11 @@ func connect(cmdline string) error {
 	}
 	fmt.Printf("Connecting to '%s'\n", args[1])
 
-	var client = &http.Client{
-		Timeout: time.Second * 10,
-	}
-	response, err := client.Get("http://127.0.0.1:8001/status")	// TODO parameterize url in config
-	if err != nil {
-		// TODO check status code
-		return fmt.Errorf("Failed to connect %s'", err)
-	}
+	err := api.CheckHost(args[1])
 
-	// Deserialize body bytes
-	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return fmt.Errorf("Failed to parse response body %s'", err)
+		return errRuntimeError
 	}
-	fmt.Printf("Got response'%s'\n", string(body))
 
 	return nil
 }
