@@ -16,7 +16,7 @@ func connect(cmdline string) error {
 	err := api.CheckHost(args[1])
 
 	if err != nil {
-		return errRuntimeError
+		return err
 	}
 
 	return nil
