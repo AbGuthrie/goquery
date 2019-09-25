@@ -1,2 +1,2 @@
 format:
-	gofmt -w cmd/
+	gofmt -w ./
