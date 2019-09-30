@@ -8,12 +8,6 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-// TODO pull this from commands package
-var suggestions = []prompt.Suggest{
-	{".connect", "Connect to a host with UUID"},
-	{".exit", "Exit goquery"},
-}
-
 func livePrefix() (string, bool) {
 	// TODO evaluate some state and return true if we want the
 	// preview pane dropdown
@@ -37,7 +31,7 @@ func completer(in prompt.Document) []prompt.Suggest {
 	if w == "" {
 		return []prompt.Suggest{}
 	}
-	return prompt.FilterHasPrefix(suggestions, w, true)
+	return prompt.FilterHasPrefix(commands.SuggestionsMap, w, true)
 }
 
 func main() {

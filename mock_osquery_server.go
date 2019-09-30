@@ -84,11 +84,6 @@ func main() {
 	enrolledHosts = make(map[string]string)
 	// TODO enumerate all required endpoints the osquery server must implement
 
-	// GET status
-	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "%UUID% active")
-	})
-
 	// osquery Endpoints
 	http.HandleFunc("/enroll", enroll)
 	http.HandleFunc("/config", config)
@@ -97,7 +92,7 @@ func main() {
 	http.HandleFunc("/distributedWrite", distributedWrite)
 
 	// goquery Endpoints
-	http.HandleFunc("/CheckHost", checkHost)
+	http.HandleFunc("/checkHost", checkHost)
 
 	http.ListenAndServeTLS(":8001", "server.crt", "server.key", nil)
 }
