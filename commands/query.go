@@ -4,19 +4,26 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/hosts"
+
 	"github.com/AbGuthrie/goquery/api"
 )
 
 func ScheduleQuery(cmdline string) error {
+	hostUUID, err := hosts.GetCurrentHost()
+	if err != nil {
+		return fmt.Errorf("Unable to query: %s", err)
+	}
+
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
-		return fmt.Errorf("A query to run must be provided.\n")
+		return fmt.Errorf("A query to run must be provided")
 	}
 	// TODO This needs to support Unicode/Runes
-	commandStripped := cmdline[strings.Index(cmdline, " ") + 1:]
+	commandStripped := cmdline[strings.Index(cmdline, " ")+1:]
 	fmt.Printf("Running '%s'\n", commandStripped)
 
-	queryName, err := api.ScheduleQuery("", commandStripped)
+	queryName, err := api.ScheduleQuery(hostUUID, commandStripped)
 
 	if err != nil {
 		return err
