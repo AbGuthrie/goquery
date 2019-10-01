@@ -70,6 +70,7 @@ func distributedWrite(w http.ResponseWriter, r *http.Request) {}
 // goquery endpoint functions
 func checkHost(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("CheckHost call for: %s", r.FormValue("uuid"))
+	w.WriteHeader(http.StatusOK)
 	for _, uuid := range enrolledHosts {
 		if uuid == r.FormValue("uuid") {
 			w.WriteHeader(http.StatusOK)

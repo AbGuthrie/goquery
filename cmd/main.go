@@ -2,16 +2,23 @@ package main
 
 import (
 	"fmt"
-	"github.com/AbGuthrie/goquery/commands"
 	"strings"
+
+	"github.com/AbGuthrie/goquery/commands"
+	"github.com/AbGuthrie/goquery/hosts"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func livePrefix() (string, bool) {
-	// TODO evaluate some state and return true if we want the
-	// preview pane dropdown
-	return "", false
+func refreshLivePrefix() (string, bool) {
+	// Prototype for showing current connected host state in
+	// input line prefix
+	subPrefix := ""
+	currentHost, err := hosts.GetCurrentHost()
+	if err == nil {
+		subPrefix = " | " + currentHost + " "
+	}
+	return fmt.Sprintf("goquery%s> ", subPrefix), true
 }
 
 func executor(input string) {
@@ -39,7 +46,7 @@ func main() {
 		executor,
 		completer,
 		prompt.OptionPrefix("goquery> "),
-		prompt.OptionLivePrefix(livePrefix),
+		prompt.OptionLivePrefix(refreshLivePrefix),
 		prompt.OptionTitle("goquery"),
 	)
 	p.Run()

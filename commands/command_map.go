@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+
 	prompt "github.com/c-bata/go-prompt"
 )
 
@@ -17,11 +18,13 @@ var errRuntimeError error
 
 func init() {
 	CommandMap = map[string]GoQueryCommand{
-		".connect": connect,
-		".exit":    exit,
+		".connect":    connect,
+		".disconnect": disconnect,
+		".exit":       exit,
 	}
 	SuggestionsMap = []prompt.Suggest{
 		{".connect", "Connect to a host with UUID"},
+		{".disconnect", "Disconnect form a host with UUID"},
 		{".exit", "Exit goquery"},
 	}
 
