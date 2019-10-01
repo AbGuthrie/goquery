@@ -20,14 +20,15 @@ func init() {
 	CommandMap = map[string]GoQueryCommand{
 		".connect":    connect,
 		".disconnect": disconnect,
+		".query":      ScheduleQuery,
 		".exit":       exit,
 	}
 	SuggestionsMap = []prompt.Suggest{
 		{".connect", "Connect to a host with UUID"},
 		{".disconnect", "Disconnect form a host with UUID"},
+		{".query", "Schedule a query on a host"},
 		{".exit", "Exit goquery"},
 	}
-
 	errArgumentError = errors.New("The arguments provided were incorrect for the command")
 	errRuntimeError = errors.New("There was a problem executing the command")
 }
