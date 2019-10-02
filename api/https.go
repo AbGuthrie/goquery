@@ -87,20 +87,21 @@ func FetchResults(queryName string) (string, error) {
 	if response.StatusCode == 404 {
 		return "", fmt.Errorf("Unknown queryName")
 	}
-	if response.StatusCode == 200 {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			return "", fmt.Errorf("Could not read fetchResults response")
-		}
-
-		resultsResponse := ResultsResponse{}
-		if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
-			return "", err
-		}
-		fmt.Printf("Successfully fetched results:\n%#v\n", resultsResponse)
-
-		// Return QueryResultsResponse type (outer caller should check .Status)
-		return "TODO Results coming soon", nil
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
 	}
-	return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", fmt.Errorf("Could not read fetchResults response")
+	}
+
+	resultsResponse := ResultsResponse{}
+	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
+		return "", err
+	}
+	fmt.Printf("Successfully fetched results:\n%#v\n", resultsResponse)
+
+	// Return QueryResultsResponse type (outer caller should check .Status)
+	return "TODO Results coming soon", nil
 }
