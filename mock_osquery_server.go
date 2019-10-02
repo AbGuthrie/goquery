@@ -298,5 +298,5 @@ func main() {
 	http.HandleFunc("/scheduleQuery", scheduleQuery)
 	http.HandleFunc("/fetchResults", fetchResults)
 
-	http.ListenAndServeTLS(":8001", "server.crt", "server.key", nil)
+	http.ListenAndServeTLS(":8001", "certs/example_server.crt", "certs/example_server.key", nil)
 }
