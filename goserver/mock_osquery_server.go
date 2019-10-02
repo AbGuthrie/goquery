@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -54,6 +55,7 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 	}
 	type enrollBody struct {
 		EnrollSecret string          `json:"enroll_secret"`
+		HostIdentifier string        `json:"host_identifier"`
 		HostDetails  hostDetailsBody `json:"host_details"`
 	}
 
@@ -78,12 +80,17 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "{\"node_invalid\" : true}")
 		return
 	}
-
 	nodeKey := randomString(32)
 	fmt.Fprintf(w, "{\"node_key\" : \"%s\"}", nodeKey)
-	enrolledHosts[nodeKey] = parsedBody.HostDetails.SystemInfo.UUID
+	// The configuration is overriding the host_identifier with something else so we
+	// should definitely use that for indexing
+	if parsedBody.HostIdentifier != "" {
+		enrolledHosts[nodeKey] = parsedBody.HostIdentifier
+	} else {
+		enrolledHosts[nodeKey] = parsedBody.HostDetails.SystemInfo.UUID
+	}
 	queryMap[nodeKey] = make(map[string]Query)
-	fmt.Printf("Enrolled a host (%s) with node_key: %s\n", parsedBody.HostDetails.SystemInfo.UUID, nodeKey)
+	fmt.Printf("Enrolled a host (%s) with node_key: %s\n", enrolledHosts[nodeKey], nodeKey)
 }
 
 func isNodeKeyEnrolled(ar apiRequest) bool {
@@ -284,7 +291,12 @@ func main() {
 	ENROLL_SECRET = "somepresharedsecret"
 	enrolledHosts = make(map[string]string)
 	queryMap = make(map[string]map[string]Query)
-	// TODO enumerate all required endpoints the osquery server must implement
+
+	// Set up flags for certs
+	serverCrt := flag.String("server_cert", "certs/example_server.crt", "Location of a certificate to use")
+	serverKey := flag.String("server_key", "certs/example_server.key", "Location of key for certificate")
+
+	flag.Parse()
 
 	// osquery Endpoints
 	http.HandleFunc("/enroll", enroll)
@@ -298,5 +310,12 @@ func main() {
 	http.HandleFunc("/scheduleQuery", scheduleQuery)
 	http.HandleFunc("/fetchResults", fetchResults)
 
-	http.ListenAndServeTLS(":8001", "certs/example_server.crt", "certs/example_server.key", nil)
+	fmt.Printf("Starting test goquery/osquery backend...\n")
+	fmt.Printf("Server Cert Path: %s\n", *serverCrt)
+	fmt.Printf("Server Key Path:  %s\n", *serverKey)
+
+	err := http.ListenAndServeTLS(":8001", *serverCrt, *serverKey, nil)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
 }
