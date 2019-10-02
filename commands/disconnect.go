@@ -17,7 +17,7 @@ func disconnect(cmdline string) error {
 	if err := hosts.Disconnect(uuid); err != nil {
 		return fmt.Errorf("Error disconnecting from host: %s", err)
 	}
-	fmt.Printf("Disconnected from'%s'\n", uuid)
+	fmt.Printf("Disconnected from '%s'\n", uuid)
 
 	return nil
 }

@@ -14,19 +14,15 @@ func connect(cmdline string) error {
 		return fmt.Errorf("Host UUID required")
 	}
 	uuid := args[1]
-	fmt.Printf("Connecting to '%s'\n", uuid)
-
-	err := api.CheckHost(uuid)
-
-	if err != nil {
+	if err := api.CheckHost(uuid); err != nil {
 		return err
 	}
 
 	// All is good, update hosts state
 	if err := hosts.Register(uuid); err != nil {
-		return fmt.Errorf("Error registering host: %s", err)
+		return fmt.Errorf("Error connecting to host: %s", err)
 	}
-	fmt.Println("Successfully connected.")
+	fmt.Printf("Successfully connected to '%s'.\n", uuid)
 
 	return nil
 }
