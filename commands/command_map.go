@@ -25,7 +25,7 @@ func init() {
 	}
 	SuggestionsMap = []prompt.Suggest{
 		{".connect", "Connect to a host with UUID"},
-		{".disconnect", "Disconnect form a host with UUID"},
+		{".disconnect", "Disconnect from a host with UUID"},
 		{".query", "Schedule a query on a host"},
 		{".exit", "Exit goquery"},
 	}
