@@ -41,8 +41,10 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
-	response, err := client.PostForm("https://127.0.0.1:8001/ScheduleQuery",
-		url.Values{"uuid": {uuid}, "query": {query}},
+	response, err := client.PostForm("https://127.0.0.1:8001/scheduleQuery",
+		url.Values{
+			"uuid": {uuid},
+			"query": {query}},
 	)
 	if err != nil {
 		return "", fmt.Errorf("ScheduleQuery call failed: %s", err)
