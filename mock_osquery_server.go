@@ -12,13 +12,14 @@ import (
 )
 
 type Query struct {
-	Query  string
-	Name   string
-	Result []map[string]string
+	Query    string
+	Name     string
+	Result   json.RawMessage
 	Complete bool
 }
 
 var ENROLL_SECRET string
+
 // Maps Node Key -> UUID
 var enrolledHosts map[string]string
 
@@ -51,8 +52,8 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 		SystemInfo enrollSystemInfo `json:"system_info"`
 	}
 	type enrollBody struct {
-		EnrollSecret string             `json:"enroll_secret"`
-		HostDetails hostDetailsBody `json:"host_details"`
+		EnrollSecret string          `json:"enroll_secret"`
+		HostDetails  hostDetailsBody `json:"host_details"`
 	}
 
 	parsedBody := enrollBody{}
@@ -72,8 +73,8 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 
 	if parsedBody.EnrollSecret != ENROLL_SECRET {
 		fmt.Printf("Host provided incorrrect secret: %s\n", parsedBody.EnrollSecret)
-		fmt.Fprintf(w, "{\"node_invalid\" : true}")
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "{\"node_invalid\" : true}")
 		return
 	}
 
@@ -156,30 +157,22 @@ func distributedRead(w http.ResponseWriter, r *http.Request) {
 }
 
 func distributedWrite(w http.ResponseWriter, r *http.Request) {
-	type QueriesResponse struct {
-		Queries map[string][]map[string]string
-	}
-
-	type StatusResponse struct {
-		Statuses map[string]int
-	}
-
-	type DistributedResponse struct {
-		Queries interface{} `json:"queries"`
-		Statuses interface{} `json:"statuses"`
-		NodeKey string `json:"node_key"`
-	}
-
 	jsonBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Printf("Could not read body: %s\n", err)
 		return
 	}
 
-	responseParsed := DistributedResponse{}
-	err = json.Unmarshal(jsonBytes, &responseParsed)
+	type distributedResponse struct {
+		Queries  map[string]json.RawMessage `json:"queries"`
+		Statuses map[string]int             `json:"statuses"`
+		NodeKey  string                     `json:"node_key"`
+	}
 
-	if err != nil {
+	// Decode request body, but don't bother decoding the query results
+	// These should be opaquely passed along when asked for
+	responseParsed := distributedResponse{}
+	if err := json.Unmarshal(jsonBytes, &responseParsed); err != nil {
 		fmt.Printf("Could not parse body: %s\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -191,16 +184,14 @@ func distributedWrite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryData := responseParsed.Queries.(map[string]interface{})
-	for queryName, results := range queryData {
+	for queryName, resultsRaw := range responseParsed.Queries {
 		query := queryMap[responseParsed.NodeKey][queryName].Query
-		results := results.([]interface {})
-		parsedResults := make([]map[string]string, 0)
-		for idx := range results {
-			result := results[idx].(map[string]string)
-			parsedResults = append(parsedResults, result)
+		queryMap[responseParsed.NodeKey][queryName] = Query{
+			Query:    query,
+			Name:     queryName,
+			Result:   resultsRaw,
+			Complete: true,
 		}
-		queryMap[responseParsed.NodeKey][queryName] = Query{Query: query, Name: queryName, Result: parsedResults, Complete: true}
 	}
 }
 
@@ -250,7 +241,13 @@ func fetchResults(w http.ResponseWriter, r *http.Request) {
 	// The real solution will be to use a better backing store like postgres
 	for _, queries := range queryMap {
 		if query, ok := queries[queryName]; ok {
-			fmt.Fprintf(w, "%s", query.Result)
+			bytes, err := json.MarshalIndent(&query.Result, "", "\t")
+			if err != nil {
+				fmt.Printf("Could not encode query result: %s\n", err)
+				fmt.Fprintf(w, "Could not encode query result: %s\n", err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			w.Write(bytes)
 			return
 		}
 	}
