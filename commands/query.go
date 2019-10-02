@@ -15,7 +15,7 @@ import (
 func ScheduleQuery(cmdline string) error {
 	hostUUID, err := hosts.GetCurrentHost()
 	if err != nil {
-		return fmt.Errorf("Unable to query: %s", err)
+		return fmt.Errorf("No host is currently connected: %s", err)
 	}
 
 	args := strings.Split(cmdline, " ") // Separate command and arguments

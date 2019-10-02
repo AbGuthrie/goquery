@@ -8,12 +8,20 @@ import (
 	"fmt"
 )
 
+type Host struct {
+	UUID             string
+	HostName         string
+	QueryHistory     []string
+	CurrentDirectory string
+	Username         string
+}
+
 var currentHostIndex int
-var connectedHosts []string
+var connectedHosts []Host
 
 func init() {
 	currentHostIndex = -1
-	connectedHosts = []string{}
+	connectedHosts = []Host{}
 }
 
 // Register is responsible for adding a host to the list
@@ -21,13 +29,15 @@ func init() {
 // update the cursor of the current connected host.
 // If a given host is already in the list, return the index
 func Register(uuid string) error {
-	for i, _uuid := range connectedHosts {
-		if uuid == _uuid {
+	for i, host := range connectedHosts {
+		if uuid == host.UUID {
 			currentHostIndex = i
 			return nil
 		}
 	}
-	connectedHosts = append(connectedHosts, uuid)
+	connectedHosts = append(connectedHosts, Host{
+		UUID: uuid,
+	})
 	currentHostIndex = len(connectedHosts) - 1
 	return nil
 }
@@ -41,8 +51,8 @@ func Disconnect(uuid string) error {
 		index = currentHostIndex
 	} else {
 		// find provided uuid index in list
-		for i, _uuid := range connectedHosts {
-			if uuid == _uuid {
+		for i, host := range connectedHosts {
+			if uuid == host.UUID {
 				index = i
 				break
 			}
@@ -59,10 +69,10 @@ func Disconnect(uuid string) error {
 
 // SetCurrentHost updates the current index used to fetch
 // the uuid of GetCurrentHost's call, returns the uuid
-func SetCurrentHost(ind int) (string, error) {
-	if ind >= 0 && ind < len(connectedHosts) {
-		currentHostIndex = ind
-		return connectedHosts[currentHostIndex], nil
+func SetCurrentHost(targetIndex int) (string, error) {
+	if targetIndex >= 0 && targetIndex < len(connectedHosts) {
+		currentHostIndex = targetIndex
+		return connectedHosts[currentHostIndex].UUID, nil
 	}
 	return "", fmt.Errorf("Index out of range, currently connected to %d host(s)", len(connectedHosts))
 }
@@ -77,5 +87,5 @@ func GetCurrentHost() (string, error) {
 	if currentHostIndex == -1 {
 		return "", fmt.Errorf("No host index set")
 	}
-	return connectedHosts[currentHostIndex], nil
+	return connectedHosts[currentHostIndex].UUID, nil
 }
