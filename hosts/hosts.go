@@ -8,10 +8,15 @@ import (
 	"fmt"
 )
 
+type Query struct {
+	Name string
+	SQL  string
+}
+
 type Host struct {
 	UUID             string
 	HostName         string
-	QueryHistory     []string
+	QueryHistory     []Query
 	CurrentDirectory string
 	Username         string
 }
