@@ -14,8 +14,9 @@ import (
 type Query struct {
 	Query    string
 	Name     string
-	Result   json.RawMessage
 	Complete bool
+	Result   json.RawMessage `json:"results"`
+	Status   string          `json:"status"`
 }
 
 var ENROLL_SECRET string
@@ -184,14 +185,36 @@ func distributedWrite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type responseQuery struct {
+		Rows     json.RawMessage
+		Status   string
+		SQLQuery string
+	}
+	responses := make(map[string]*responseQuery)
 	for queryName, resultsRaw := range responseParsed.Queries {
-		query := queryMap[responseParsed.NodeKey][queryName].Query
-		queryMap[responseParsed.NodeKey][queryName] = Query{
-			Query:    query,
-			Name:     queryName,
-			Result:   resultsRaw,
-			Complete: true,
+		sqlQuery := queryMap[responseParsed.NodeKey][queryName].Query
+		responses[queryName] = &responseQuery{
+			SQLQuery: sqlQuery,
+			Rows:     resultsRaw,
 		}
+	}
+	for queryName, statusCode := range responseParsed.Statuses {
+		if statusCode == 0 {
+			responses[queryName].Status = "Complete"
+		} else {
+			responses[queryName].Status = fmt.Sprintf("Status Code %d", statusCode)
+		}
+	}
+
+	for queryName, response := range responses {
+		queryMap[responseParsed.NodeKey][queryName] = Query{
+			Query:    response.SQLQuery,
+			Name:     queryName,
+			Complete: true,
+			Result:   response.Rows,
+			Status:   response.Status,
+		}
+		fmt.Printf("Received and set query results for %s\n", queryName)
 	}
 }
 
@@ -225,9 +248,11 @@ func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	query := Query{}
-	query.Name = randomString(64)
-	query.Query = sentQuery
+	query := Query{
+		Name:   randomString(64),
+		Query:  sentQuery,
+		Status: "Pending",
+	}
 
 	queryMap[nodeKey][query.Name] = query
 	fmt.Fprintf(w, "{\"queryName\" : \"%s\"}", query.Name)
@@ -241,7 +266,7 @@ func fetchResults(w http.ResponseWriter, r *http.Request) {
 	// The real solution will be to use a better backing store like postgres
 	for _, queries := range queryMap {
 		if query, ok := queries[queryName]; ok {
-			bytes, err := json.MarshalIndent(&query.Result, "", "\t")
+			bytes, err := json.MarshalIndent(&query, "", "\t")
 			if err != nil {
 				fmt.Printf("Could not encode query result: %s\n", err)
 				fmt.Fprintf(w, "Could not encode query result: %s\n", err)
