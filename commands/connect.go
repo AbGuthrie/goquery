@@ -2,22 +2,27 @@ package commands
 
 import (
 	"fmt"
-	"github.com/AbGuthrie/goquery/api"
 	"strings"
+
+	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/hosts"
 )
 
 func connect(cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
-		return fmt.Errorf("Host UUID required\n")
+		return fmt.Errorf("Host UUID required")
 	}
-	fmt.Printf("Connecting to '%s'\n", args[1])
-
-	err := api.CheckHost(args[1])
-
-	if err != nil {
+	uuid := args[1]
+	if err := api.CheckHost(uuid); err != nil {
 		return err
 	}
+
+	// All is good, update hosts state
+	if err := hosts.Register(uuid); err != nil {
+		return fmt.Errorf("Error connecting to host: %s", err)
+	}
+	fmt.Printf("Successfully connected to '%s'.\n", uuid)
 
 	return nil
 }

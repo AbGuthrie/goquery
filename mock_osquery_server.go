@@ -12,13 +12,18 @@ import (
 )
 
 type Query struct {
-	Query string
-	Name string
-	Result string
+	Query    string
+	Name     string
+	Result   json.RawMessage
+	Complete bool
 }
 
 var ENROLL_SECRET string
+
+// Maps Node Key -> UUID
 var enrolledHosts map[string]string
+
+// Maps Node Key -> Map of Query Name -> Query struct
 var queryMap map[string]map[string]Query
 
 // API Request Struct
@@ -40,12 +45,15 @@ func randomString(length int) string {
 
 // Begin osquery API endpoints
 func enroll(w http.ResponseWriter, r *http.Request) {
-	type enrollPlatformInfo struct {
+	type enrollSystemInfo struct {
 		UUID string `json:"uuid"`
 	}
+	type hostDetailsBody struct {
+		SystemInfo enrollSystemInfo `json:"system_info"`
+	}
 	type enrollBody struct {
-		EnrollSecret string             `json:"enroll_secret"`
-		PlatformInfo enrollPlatformInfo `json:"platform_info"`
+		EnrollSecret string          `json:"enroll_secret"`
+		HostDetails  hostDetailsBody `json:"host_details"`
 	}
 
 	parsedBody := enrollBody{}
@@ -65,16 +73,16 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 
 	if parsedBody.EnrollSecret != ENROLL_SECRET {
 		fmt.Printf("Host provided incorrrect secret: %s\n", parsedBody.EnrollSecret)
-		fmt.Fprintf(w, "{\"node_invalid\" : true}")
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "{\"node_invalid\" : true}")
 		return
 	}
 
 	nodeKey := randomString(32)
 	fmt.Fprintf(w, "{\"node_key\" : \"%s\"}", nodeKey)
-	enrolledHosts[nodeKey] = parsedBody.PlatformInfo.UUID
+	enrolledHosts[nodeKey] = parsedBody.HostDetails.SystemInfo.UUID
 	queryMap[nodeKey] = make(map[string]Query)
-	fmt.Printf("Enrolled a new host with node_key: %s\n", nodeKey)
+	fmt.Printf("Enrolled a host (%s) with node_key: %s\n", parsedBody.HostDetails.SystemInfo.UUID, nodeKey)
 }
 
 func isNodeKeyEnrolled(ar apiRequest) bool {
@@ -114,11 +122,11 @@ func config(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "{\"schedule\":{}, \"node_invalid\" : false}")
 }
 
-func log(w http.ResponseWriter, r *http.Request)              {
+func log(w http.ResponseWriter, r *http.Request) {
 	// This server is designed to test goquery so we don't do anything with the logs
 }
 
-func distributedRead(w http.ResponseWriter, r *http.Request)  {
+func distributedRead(w http.ResponseWriter, r *http.Request) {
 	parsedRequest, err := httpRequestToAPIRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -138,10 +146,10 @@ func distributedRead(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 	for name, query := range queryMap[parsedRequest.NodeKey] {
-		if query.Result != "" {
+		if query.Complete {
 			continue
 		}
-		renderedQueries += fmt.Sprintf("\"%s\" : \"%s\",\n", name, query.Query)
+		renderedQueries += fmt.Sprintf("\"%s\" : \"%s\",", name, query.Query)
 	}
 
 	renderedQueries = strings.TrimRight(renderedQueries, ",")
@@ -149,15 +157,41 @@ func distributedRead(w http.ResponseWriter, r *http.Request)  {
 }
 
 func distributedWrite(w http.ResponseWriter, r *http.Request) {
-	parsedRequest, err := httpRequestToAPIRequest(r)
+	jsonBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		fmt.Printf("Could not read body: %s\n", err)
+		return
+	}
+
+	type distributedResponse struct {
+		Queries  map[string]json.RawMessage `json:"queries"`
+		Statuses map[string]int             `json:"statuses"`
+		NodeKey  string                     `json:"node_key"`
+	}
+
+	// Decode request body, but don't bother decoding the query results
+	// These should be opaquely passed along when asked for
+	responseParsed := distributedResponse{}
+	if err := json.Unmarshal(jsonBytes, &responseParsed); err != nil {
+		fmt.Printf("Could not parse body: %s\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if !isNodeKeyEnrolled(parsedRequest) {
+	if !isNodeKeyEnrolled(apiRequest{NodeKey: responseParsed.NodeKey}) {
 		fmt.Fprintf(w, "{\"node_invalid\" : true}")
+		fmt.Printf("The host sending results is not enrolled\n")
 		return
+	}
+
+	for queryName, resultsRaw := range responseParsed.Queries {
+		query := queryMap[responseParsed.NodeKey][queryName].Query
+		queryMap[responseParsed.NodeKey][queryName] = Query{
+			Query:    query,
+			Name:     queryName,
+			Result:   resultsRaw,
+			Complete: true,
+		}
 	}
 }
 
@@ -175,7 +209,7 @@ func checkHostExists(requestedUUID string) (string, error) {
 // Begin goquery APIs
 func checkHost(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
-	fmt.Printf("CheckHost call for: %s", r.FormValue("uuid"))
+	fmt.Printf("CheckHost call for: %s\n", r.FormValue("uuid"))
 	if _, ok := checkHostExists(uuid); ok != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -183,29 +217,37 @@ func checkHost(w http.ResponseWriter, r *http.Request) {
 
 func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
-	fmt.Printf("ScheduleQuery call for: %s", uuid)
-	nodeKey, err := checkHostExists(uuid);
+	sentQuery := r.FormValue("query")
+
+	fmt.Printf("ScheduleQuery call for: %s with query: %s\n", uuid, sentQuery)
+	nodeKey, err := checkHostExists(uuid)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	query := Query{}
 	query.Name = randomString(64)
-	query.Query = r.FormValue("query")
+	query.Query = sentQuery
 
 	queryMap[nodeKey][query.Name] = query
-	fmt.Fprintf(w, "{\"queryName\" : %s}", query.Name)
+	fmt.Fprintf(w, "{\"queryName\" : \"%s\"}", query.Name)
 }
 
 func fetchResults(w http.ResponseWriter, r *http.Request) {
 	queryName := r.FormValue("queryName")
-	fmt.Printf("Fetching Results For: %s", queryName)
+	fmt.Printf("Fetching Results For: %s\n", queryName)
 	// Yes I know this is really slow. For testing it should be fine
 	// but I will fix this architecture later if needed
 	// The real solution will be to use a better backing store like postgres
 	for _, queries := range queryMap {
 		if query, ok := queries[queryName]; ok {
-			fmt.Fprintf(w, "%s", query.Result)
+			bytes, err := json.MarshalIndent(&query.Result, "", "\t")
+			if err != nil {
+				fmt.Printf("Could not encode query result: %s\n", err)
+				fmt.Fprintf(w, "Could not encode query result: %s\n", err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			w.Write(bytes)
 			return
 		}
 	}
