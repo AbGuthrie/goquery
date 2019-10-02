@@ -43,7 +43,7 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
 	response, err := client.PostForm("https://127.0.0.1:8001/scheduleQuery",
 		url.Values{
-			"uuid": {uuid},
+			"uuid":  {uuid},
 			"query": {query}},
 	)
 	if err != nil {
@@ -65,5 +65,43 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 		return qsResponse.QueryName, nil
 	}
 	return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+}
 
+func FetchResults(queryName string) (string, error) {
+	type ResultsResponse struct {
+		Rows   []map[string]string `json:"results"`
+		Status string              `json:"status"`
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
+	response, err := client.PostForm(
+		"https://127.0.0.1:8001/fetchResults",
+		url.Values{"queryName": {queryName}},
+	)
+	if err != nil {
+		return "", fmt.Errorf("FetchResults call failed: %s", err)
+	}
+	if response.StatusCode == 404 {
+		return "", fmt.Errorf("Unknown queryName")
+	}
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+	}
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", fmt.Errorf("Could not read fetchResults response")
+	}
+
+	resultsResponse := ResultsResponse{}
+	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
+		return "", err
+	}
+	fmt.Printf("Successfully fetched results:\n%#v\n", resultsResponse)
+
+	// Return QueryResultsResponse type (outer caller should check .Status)
+	return "TODO Results coming soon", nil
 }

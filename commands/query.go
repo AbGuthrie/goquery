@@ -3,11 +3,14 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/AbGuthrie/goquery/hosts"
 
 	"github.com/AbGuthrie/goquery/api"
 )
+
+// TODO .query should map to Query which is blocking
 
 func ScheduleQuery(cmdline string) error {
 	hostUUID, err := hosts.GetCurrentHost()
@@ -30,6 +33,14 @@ func ScheduleQuery(cmdline string) error {
 	}
 
 	fmt.Printf("Query Started With Name: %s\n", queryName)
+
+	// naive timeout for results
+	time.Sleep(5 * time.Second)
+
+	_, err = api.FetchResults(queryName)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
