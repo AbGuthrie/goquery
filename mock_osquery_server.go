@@ -14,11 +14,15 @@ import (
 type Query struct {
 	Query  string
 	Name   string
-	Result string
+	Result []map[string]string
+	Complete bool
 }
 
 var ENROLL_SECRET string
+// Maps Node Key -> UUID
 var enrolledHosts map[string]string
+
+// Maps Node Key -> Map of Query Name -> Query struct
 var queryMap map[string]map[string]Query
 
 // API Request Struct
@@ -40,12 +44,15 @@ func randomString(length int) string {
 
 // Begin osquery API endpoints
 func enroll(w http.ResponseWriter, r *http.Request) {
-	type enrollPlatformInfo struct {
+	type enrollSystemInfo struct {
 		UUID string `json:"uuid"`
+	}
+	type hostDetailsBody struct {
+		SystemInfo enrollSystemInfo `json:"system_info"`
 	}
 	type enrollBody struct {
 		EnrollSecret string             `json:"enroll_secret"`
-		PlatformInfo enrollPlatformInfo `json:"platform_info"`
+		HostDetails hostDetailsBody `json:"host_details"`
 	}
 
 	parsedBody := enrollBody{}
@@ -72,9 +79,9 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 
 	nodeKey := randomString(32)
 	fmt.Fprintf(w, "{\"node_key\" : \"%s\"}", nodeKey)
-	enrolledHosts[nodeKey] = parsedBody.PlatformInfo.UUID
+	enrolledHosts[nodeKey] = parsedBody.HostDetails.SystemInfo.UUID
 	queryMap[nodeKey] = make(map[string]Query)
-	fmt.Printf("Enrolled a new host with node_key: %s\n", nodeKey)
+	fmt.Printf("Enrolled a host (%s) with node_key: %s\n", parsedBody.HostDetails.SystemInfo.UUID, nodeKey)
 }
 
 func isNodeKeyEnrolled(ar apiRequest) bool {
@@ -138,10 +145,10 @@ func distributedRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for name, query := range queryMap[parsedRequest.NodeKey] {
-		if query.Result != "" {
+		if query.Complete {
 			continue
 		}
-		renderedQueries += fmt.Sprintf("\"%s\" : \"%s\",\n", name, query.Query)
+		renderedQueries += fmt.Sprintf("\"%s\" : \"%s\",", name, query.Query)
 	}
 
 	renderedQueries = strings.TrimRight(renderedQueries, ",")
@@ -149,15 +156,51 @@ func distributedRead(w http.ResponseWriter, r *http.Request) {
 }
 
 func distributedWrite(w http.ResponseWriter, r *http.Request) {
-	parsedRequest, err := httpRequestToAPIRequest(r)
+	type QueriesResponse struct {
+		Queries map[string][]map[string]string
+	}
+
+	type StatusResponse struct {
+		Statuses map[string]int
+	}
+
+	type DistributedResponse struct {
+		Queries interface{} `json:"queries"`
+		Statuses interface{} `json:"statuses"`
+		NodeKey string `json:"node_key"`
+	}
+
+	jsonBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		fmt.Printf("Could not read body: %s\n", err)
+		return
+	}
+
+	responseParsed := DistributedResponse{}
+	err = json.Unmarshal(jsonBytes, &responseParsed)
+
+	if err != nil {
+		fmt.Printf("Could not parse body: %s\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if !isNodeKeyEnrolled(parsedRequest) {
+	if !isNodeKeyEnrolled(apiRequest{NodeKey: responseParsed.NodeKey}) {
 		fmt.Fprintf(w, "{\"node_invalid\" : true}")
+		fmt.Printf("The host sending results is not enrolled\n")
 		return
+	}
+
+	queryData := responseParsed.Queries.(map[string]interface{})
+	for queryName, results := range queryData {
+		query := queryMap[responseParsed.NodeKey][queryName].Query
+		results := results.([]interface {})
+		parsedResults := make([]map[string]string, 0)
+		for idx := range results {
+			result := results[idx].(map[string]string)
+			parsedResults = append(parsedResults, result)
+		}
+		queryMap[responseParsed.NodeKey][queryName] = Query{Query: query, Name: queryName, Result: parsedResults, Complete: true}
 	}
 }
 
@@ -175,7 +218,7 @@ func checkHostExists(requestedUUID string) (string, error) {
 // Begin goquery APIs
 func checkHost(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
-	fmt.Printf("CheckHost call for: %s", r.FormValue("uuid"))
+	fmt.Printf("CheckHost call for: %s\n", r.FormValue("uuid"))
 	if _, ok := checkHostExists(uuid); ok != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -183,7 +226,9 @@ func checkHost(w http.ResponseWriter, r *http.Request) {
 
 func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
-	fmt.Printf("ScheduleQuery call for: %s", uuid)
+	sentQuery := r.FormValue("query")
+
+	fmt.Printf("ScheduleQuery call for: %s with query: %s\n", uuid, sentQuery)
 	nodeKey, err := checkHostExists(uuid)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -191,15 +236,15 @@ func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 	}
 	query := Query{}
 	query.Name = randomString(64)
-	query.Query = r.FormValue("query")
+	query.Query = sentQuery
 
 	queryMap[nodeKey][query.Name] = query
-	fmt.Fprintf(w, "{\"queryName\" : %s}", query.Name)
+	fmt.Fprintf(w, "{\"queryName\" : \"%s\"}", query.Name)
 }
 
 func fetchResults(w http.ResponseWriter, r *http.Request) {
 	queryName := r.FormValue("queryName")
-	fmt.Printf("Fetching Results For: %s", queryName)
+	fmt.Printf("Fetching Results For: %s\n", queryName)
 	// Yes I know this is really slow. For testing it should be fine
 	// but I will fix this architecture later if needed
 	// The real solution will be to use a better backing store like postgres
