@@ -67,7 +67,7 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
 }
 
-func FetchResults(queryName string) ([]map[string]string, error) {
+func FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"results"`
 		Status string              `json:"status"`
@@ -85,24 +85,24 @@ func FetchResults(queryName string) ([]map[string]string, error) {
 	)
 
 	if err != nil {
-		return resultsResponse.Rows, fmt.Errorf("FetchResults call failed: %s", err)
+		return resultsResponse.Rows, "", fmt.Errorf("FetchResults call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
-		return resultsResponse.Rows, fmt.Errorf("Unknown queryName")
+		return resultsResponse.Rows, "", fmt.Errorf("Unknown queryName")
 	}
 	if response.StatusCode != 200 {
-		return resultsResponse.Rows, fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+		return resultsResponse.Rows, "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return resultsResponse.Rows, fmt.Errorf("Could not read fetchResults response")
+		return resultsResponse.Rows, "", fmt.Errorf("Could not read fetchResults response")
 	}
 
 	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
-		return resultsResponse.Rows, err
+		return resultsResponse.Rows, "", err
 	}
 
 	// Return QueryResultsResponse type (outer caller should check .Status)
-	return resultsResponse.Rows, nil
+	return resultsResponse.Rows, resultsResponse.Status, nil
 }
