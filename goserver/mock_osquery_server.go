@@ -166,7 +166,7 @@ func distributedRead(w http.ResponseWriter, r *http.Request) {
 		if query.Complete {
 			continue
 		}
-		renderedQueries += fmt.Sprintf("\"%s\" : \"%s\",", name, query.Query)
+		renderedQueries += fmt.Sprintf("\"%s\" : %s,", name, query.Query)
 	}
 
 	renderedQueries = strings.TrimRight(renderedQueries, ",")
@@ -266,9 +266,14 @@ func checkHost(w http.ResponseWriter, r *http.Request) {
 
 func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
-	sentQuery := r.FormValue("query")
+	sentQuery, err := json.Marshal(r.FormValue("query"))
 
-	fmt.Printf("ScheduleQuery call for: %s with query: %s\n", uuid, sentQuery)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("ScheduleQuery call for: %s with query: %s\n", uuid, string(sentQuery))
 	nodeKey, err := checkHostExists(uuid)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -276,7 +281,7 @@ func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 	}
 	query := Query{
 		Name:   randomString(64),
-		Query:  sentQuery,
+		Query:  string(sentQuery),
 		Status: "Pending",
 	}
 

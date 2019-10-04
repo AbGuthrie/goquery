@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
@@ -23,24 +22,8 @@ func ListDirectory(cmdline string) error {
 		return fmt.Errorf("This commands takes no parameters")
 	}
 	listQuery := fmt.Sprintf("select * from file where directory = '%s'", host.CurrentDirectory)
-	queryName, err := api.ScheduleQuery(host.UUID, listQuery)
+	results, err := api.ScheduleQueryAndWait(host.UUID, listQuery)
 
-	if err != nil {
-		return err
-	}
-
-	// TODO This should be debugging output
-	// fmt.Printf("Query Started With Name: %s\n", queryName)
-	for {
-		_, status, err := api.FetchResults(queryName)
-		if err != nil || status != "Pending" {
-			break
-		}
-		time.Sleep(2 * time.Second)
-		fmt.Printf(".")
-	}
-	fmt.Printf("\n")
-	results, _, err := api.FetchResults(queryName)
 	if err != nil {
 		return err
 	}

@@ -115,3 +115,7 @@ func SetCurrentHostDirectory(newDirectory string) error {
 	}
 	return connectedHosts[currentHostIndex].SetCurrentDirectory(newDirectory)
 }
+
+func AddQueryToCurrentHost(newQuery Query) {
+	connectedHosts[currentHostIndex].QueryHistory = append(connectedHosts[currentHostIndex].QueryHistory, newQuery)
+}

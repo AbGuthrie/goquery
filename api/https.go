@@ -7,12 +7,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/AbGuthrie/goquery/hosts"
 )
 
-func init() {}
+var ctrlcChannel (chan os.Signal)
+
+func init() {
+	ctrlcChannel = make(chan os.Signal, 1)
+	signal.Notify(ctrlcChannel, os.Interrupt)
+}
 
 func CheckHost(uuid string) (hosts.Host, error) {
 	type APIHost struct {
@@ -79,19 +86,50 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	if response.StatusCode == 404 {
 		return "", fmt.Errorf("Unknown Host")
 	}
-	if response.StatusCode == 200 {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			return "", fmt.Errorf("Could not read response")
-		}
-		qsResponse := QueryScheduleResponse{}
-		err = json.Unmarshal(bodyBytes, &qsResponse)
-		if err != nil {
-			return "", err
-		}
-		return qsResponse.QueryName, nil
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
 	}
-	return "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", fmt.Errorf("Could not read response")
+	}
+	qsResponse := QueryScheduleResponse{}
+	err = json.Unmarshal(bodyBytes, &qsResponse)
+	if err != nil {
+		return "", err
+	}
+	hosts.AddQueryToCurrentHost(hosts.Query{Name: qsResponse.QueryName, SQL: query})
+	return qsResponse.QueryName, nil
+}
+
+func ScheduleQueryAndWait(uuid string, query string) ([]map[string]string, error) {
+	queryName, err := ScheduleQuery(uuid, query)
+	var results = make([]map[string]string, 0)
+	if err != nil {
+		return results, fmt.Errorf("ScheduleQueryAndWait call failed: %s", err)
+	}
+
+	// Wait while the query is pending
+	var status string
+	for {
+		results, status, err = FetchResults(queryName)
+		if err != nil || status != "Pending" {
+			break
+		}
+		time.Sleep(time.Second)
+		fmt.Printf(".")
+		select {
+			case <-ctrlcChannel:
+				//fmt.Printf("Received Signal: %s", x)
+				return results, fmt.Errorf("Waiting Cancelled")
+			default:
+		}
+	}
+
+	fmt.Printf("\n")
+	// No need to check error here because return is the same
+	return results, err
 }
 
 func FetchResults(queryName string) ([]map[string]string, string, error) {
