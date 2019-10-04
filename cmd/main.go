@@ -2,43 +2,18 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"os/user"
-	"path"
 	"strings"
 
 	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-var historyPath string
-
-func init() {
-	// Populate historyPath and create history file if needed
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal(fmt.Printf("Failed to fetch user info for home directory: %s", err))
-	}
-	goQueryPath := path.Join(usr.HomeDir, ".goquery")
-	historyPath = path.Join(goQueryPath, "history")
-
-	// Create directory and file home if it doesn't exist yet
-	if _, err := os.Stat(historyPath); os.IsNotExist(err) {
-		os.MkdirAll(goQueryPath, os.ModePerm)
-		emptyHistory, err := os.Create(historyPath)
-		emptyHistory.Close()
-		if err != nil {
-			log.Fatal(fmt.Printf("Failed to create history file: %s", err))
-		}
-	}
-}
-
 func main() {
-	history, err := loadHistoryFile()
+	history, err := utils.LoadHistoryFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,43 +28,6 @@ func main() {
 	)
 	p.Run()
 }
-
-// Begin history file functions
-// ----------------------------
-
-func loadHistoryFile() ([]string, error) {
-	historyBytes, err := ioutil.ReadFile(historyPath)
-	if err != nil {
-		return []string{}, err
-	}
-	lines := strings.Split(string(historyBytes), "\n")
-	return lines, nil
-}
-
-func updateHistoryFile(line string) error {
-	// If history file is empty, don't prepend \n to entry
-	newline := "\n"
-	historyBytes, err := ioutil.ReadFile(historyPath)
-	if err != nil {
-		return err
-	}
-	if string(historyBytes) == "" {
-		newline = ""
-	}
-	// Write line entry to history file
-	historyFile, err := os.OpenFile(historyPath, os.O_APPEND|os.O_WRONLY, 0644)
-	defer historyFile.Close()
-	if err != nil {
-		return err
-	}
-	if _, err := historyFile.Write([]byte(newline + line)); err != nil {
-		return err
-	}
-	return nil
-}
-
-// begin go-prompt integration functions
-// ------------------------------------
 
 func refreshLivePrefix() (string, bool) {
 	// Prototype for showing current connected host state in
@@ -112,7 +50,7 @@ func executor(input string) {
 	} else {
 		fmt.Printf("No such command: %s\n", args[0])
 	}
-	if err := updateHistoryFile(input); err != nil {
+	if err := utils.UpdateHistoryFile(input); err != nil {
 		fmt.Printf("%s\n", err)
 	}
 }
