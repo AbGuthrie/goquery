@@ -34,7 +34,7 @@ func ChangeDirectory(cmdline string) error {
 
 	// The change isn't absolute so we need the current directory
 	if requestedDirectory[0] != '/' {
-		requestedDirectory =  host.CurrentDirectory + requestedDirectory
+		requestedDirectory = host.CurrentDirectory + requestedDirectory
 	}
 
 	// All directory changes must end with a forward slash

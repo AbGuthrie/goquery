@@ -20,10 +20,18 @@ type Query struct {
 	Status   string          `json:"status"`
 }
 
+type Host struct {
+	UUID           string
+	ComputerName   string
+	HostIdentifier string
+	Platform       string
+	Version        string
+}
+
 var ENROLL_SECRET string
 
 // Maps Node Key -> UUID
-var enrolledHosts map[string]string
+var enrolledHosts map[string]Host
 
 // Maps Node Key -> Map of Query Name -> Query struct
 var queryMap map[string]map[string]Query
@@ -48,15 +56,16 @@ func randomString(length int) string {
 // Begin osquery API endpoints
 func enroll(w http.ResponseWriter, r *http.Request) {
 	type enrollSystemInfo struct {
-		UUID string `json:"uuid"`
+		UUID         string `json:"uuid"`
+		ComputerName string `json:"computer_name"`
 	}
 	type hostDetailsBody struct {
 		SystemInfo enrollSystemInfo `json:"system_info"`
 	}
 	type enrollBody struct {
-		EnrollSecret string          `json:"enroll_secret"`
-		HostIdentifier string        `json:"host_identifier"`
-		HostDetails  hostDetailsBody `json:"host_details"`
+		EnrollSecret   string          `json:"enroll_secret"`
+		HostIdentifier string          `json:"host_identifier"`
+		HostDetails    hostDetailsBody `json:"host_details"`
 	}
 
 	parsedBody := enrollBody{}
@@ -85,12 +94,12 @@ func enroll(w http.ResponseWriter, r *http.Request) {
 	// The configuration is overriding the host_identifier with something else so we
 	// should definitely use that for indexing
 	if parsedBody.HostIdentifier != "" {
-		enrolledHosts[nodeKey] = parsedBody.HostIdentifier
+		enrolledHosts[nodeKey] = Host{UUID: parsedBody.HostIdentifier, ComputerName: parsedBody.HostDetails.SystemInfo.ComputerName}
 	} else {
-		enrolledHosts[nodeKey] = parsedBody.HostDetails.SystemInfo.UUID
+		enrolledHosts[nodeKey] = Host{UUID: parsedBody.HostDetails.SystemInfo.UUID, ComputerName: parsedBody.HostDetails.SystemInfo.ComputerName}
 	}
 	queryMap[nodeKey] = make(map[string]Query)
-	fmt.Printf("Enrolled a host (%s) with node_key: %s\n", enrolledHosts[nodeKey], nodeKey)
+	fmt.Printf("Enrolled a host (%s) with node_key: %s\n", enrolledHosts[nodeKey].UUID, nodeKey)
 }
 
 func isNodeKeyEnrolled(ar apiRequest) bool {
@@ -228,8 +237,8 @@ func distributedWrite(w http.ResponseWriter, r *http.Request) {
 // End osquery API endpoints
 
 func checkHostExists(requestedUUID string) (string, error) {
-	for nodeKey, uuid := range enrolledHosts {
-		if uuid == requestedUUID {
+	for nodeKey, host := range enrolledHosts {
+		if host.UUID == requestedUUID {
 			return nodeKey, nil
 		}
 	}
@@ -240,9 +249,19 @@ func checkHostExists(requestedUUID string) (string, error) {
 func checkHost(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
 	fmt.Printf("CheckHost call for: %s\n", r.FormValue("uuid"))
-	if _, ok := checkHostExists(uuid); ok != nil {
+	var nodeKey string
+	var ok error
+	if nodeKey, ok = checkHostExists(uuid); ok != nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
+
+	renderedHost, err := json.Marshal(enrolledHosts[nodeKey])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "%s", renderedHost)
 }
 
 func scheduleQuery(w http.ResponseWriter, r *http.Request) {
@@ -289,7 +308,7 @@ func fetchResults(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	ENROLL_SECRET = "somepresharedsecret"
-	enrolledHosts = make(map[string]string)
+	enrolledHosts = make(map[string]Host)
 	queryMap = make(map[string]map[string]Query)
 
 	// Set up flags for certs
