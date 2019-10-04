@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AbGuthrie/goquery/hosts"
-
 	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/utils"
 )
 
 // TODO .query should map to Query which is blocking
@@ -37,10 +37,12 @@ func ScheduleQuery(cmdline string) error {
 	// naive timeout for results
 	time.Sleep(5 * time.Second)
 
-	_, err = api.FetchResults(queryName)
+	results, err := api.FetchResults(queryName)
 	if err != nil {
 		return err
 	}
+
+	utils.PrettyPrintQueryResults(results, 0)
 
 	return nil
 }
