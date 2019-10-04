@@ -2,13 +2,32 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
+
+func main() {
+	history, err := utils.LoadHistoryFile()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p := prompt.New(
+		executor,
+		completer,
+		prompt.OptionPrefix("goquery> "),
+		prompt.OptionLivePrefix(refreshLivePrefix),
+		prompt.OptionTitle("goquery"),
+		prompt.OptionHistory(history),
+	)
+	p.Run()
+}
 
 func refreshLivePrefix() (string, bool) {
 	// Prototype for showing current connected host state in
@@ -31,6 +50,9 @@ func executor(input string) {
 	} else {
 		fmt.Printf("No such command: %s\n", args[0])
 	}
+	if err := utils.UpdateHistoryFile(input); err != nil {
+		fmt.Printf("%s\n", err)
+	}
 }
 
 func completer(in prompt.Document) []prompt.Suggest {
@@ -39,15 +61,4 @@ func completer(in prompt.Document) []prompt.Suggest {
 		return []prompt.Suggest{}
 	}
 	return prompt.FilterHasPrefix(commands.SuggestionsMap, w, true)
-}
-
-func main() {
-	p := prompt.New(
-		executor,
-		completer,
-		prompt.OptionPrefix("goquery> "),
-		prompt.OptionLivePrefix(refreshLivePrefix),
-		prompt.OptionTitle("goquery"),
-	)
-	p.Run()
 }
