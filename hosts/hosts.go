@@ -21,6 +21,17 @@ type Host struct {
 	Username         string
 }
 
+func (host *Host) SetCurrentDirectory(newDirectory string) error {
+	if len(newDirectory) == 0 {
+		return fmt.Errorf("You cannot set directory to empty string")
+	}
+	if newDirectory[len(newDirectory)-1] != '/' {
+		return fmt.Errorf("Final character of directory must be /")
+	}
+	host.CurrentDirectory = newDirectory
+	return nil
+}
+
 var currentHostIndex int
 var connectedHosts []Host
 
@@ -42,6 +53,7 @@ func Register(uuid string) error {
 	}
 	connectedHosts = append(connectedHosts, Host{
 		UUID: uuid,
+		CurrentDirectory: "/",
 	})
 	currentHostIndex = len(connectedHosts) - 1
 	return nil
@@ -82,15 +94,25 @@ func SetCurrentHost(targetIndex int) (string, error) {
 	return "", fmt.Errorf("Index out of range, currently connected to %d host(s)", len(connectedHosts))
 }
 
-// GetCurrentHost is a public API that returns the uuid of
-// the shell's current host state which is ultimately used
-// to prepend a given API call
-func GetCurrentHost() (string, error) {
+// GetCurrentHost is a public API that returns a point to the current host structure.
+func GetCurrentHost() (Host, error) {
 	if len(connectedHosts) == 0 {
-		return "", fmt.Errorf("No active host connections")
+		return Host{}, fmt.Errorf("No active host connections")
 	}
+
 	if currentHostIndex == -1 {
-		return "", fmt.Errorf("No host index set")
+		return Host{}, fmt.Errorf("No host index set")
 	}
-	return connectedHosts[currentHostIndex].UUID, nil
+	return connectedHosts[currentHostIndex], nil
+}
+
+func SetCurrentHostDirectory(newDirectory string) error {
+	if len(connectedHosts) == 0 {
+		return fmt.Errorf("No active host connections")
+	}
+
+	if currentHostIndex == -1 {
+		return fmt.Errorf("No host index set")
+	}
+	return connectedHosts[currentHostIndex].SetCurrentDirectory(newDirectory)
 }

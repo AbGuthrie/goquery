@@ -22,12 +22,16 @@ func init() {
 		".disconnect": disconnect,
 		".query":      ScheduleQuery,
 		".exit":       exit,
+		"ls":          ListDirectory,
+		"cd":          ChangeDirectory,
 	}
 	SuggestionsMap = []prompt.Suggest{
 		{".connect", "Connect to a host with UUID"},
 		{".disconnect", "Disconnect from a host with UUID"},
 		{".query", "Schedule a query on a host"},
 		{".exit", "Exit goquery"},
+		{"cd", "Change directories on a remote host"},
+		{"ls", "List the files in the current directory on the remote host"},
 	}
 	errArgumentError = errors.New("The arguments provided were incorrect for the command")
 	errRuntimeError = errors.New("There was a problem executing the command")

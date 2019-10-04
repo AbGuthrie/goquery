@@ -16,7 +16,7 @@ func refreshLivePrefix() (string, bool) {
 	subPrefix := ""
 	currentHost, err := hosts.GetCurrentHost()
 	if err == nil {
-		subPrefix = " | " + currentHost + " "
+		subPrefix = " | " + currentHost.UUID + ":" + currentHost.CurrentDirectory
 	}
 	return fmt.Sprintf("goquery%s> ", subPrefix), true
 }
