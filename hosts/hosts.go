@@ -15,7 +15,9 @@ type Query struct {
 
 type Host struct {
 	UUID             string
-	HostName         string
+	ComputerName     string
+	Platform         string
+    Version          string
 	QueryHistory     []Query
 	CurrentDirectory string
 	Username         string
@@ -44,17 +46,14 @@ func init() {
 // of established connected hosts in the host list. Also
 // update the cursor of the current connected host.
 // If a given host is already in the list, return the index
-func Register(uuid string) error {
+func Register(newHost Host) error {
 	for i, host := range connectedHosts {
-		if uuid == host.UUID {
+		if newHost.UUID == host.UUID {
 			currentHostIndex = i
 			return nil
 		}
 	}
-	connectedHosts = append(connectedHosts, Host{
-		UUID: uuid,
-		CurrentDirectory: "/",
-	})
+	connectedHosts = append(connectedHosts, newHost)
 	currentHostIndex = len(connectedHosts) - 1
 	return nil
 }
