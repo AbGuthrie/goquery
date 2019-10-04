@@ -1,0 +1,17 @@
+--verbose
+--tls_dump
+--tls_hostname=goserver:8001
+--config_plugin=tls
+--distributed_plugin=tls
+--enroll_tls_endpoint=/enroll
+--config_tls_endpoint=/config
+--enroll_secret_path=/tmp/secret
+--allow_unsafe
+--db_path=/tmp/osqueryd
+--pidfile=/tmp/pid
+--disable_distributed=false
+--distributed_tls_read_endpoint=/distributedRead
+--distributed_tls_write_endpoint=/distributedWrite
+--distributed_interval=5
+--tls_server_certs=/etc/osquery/server.crt
+--host_identifier=ephemeral
