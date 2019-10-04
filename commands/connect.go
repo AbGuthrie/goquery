@@ -14,7 +14,7 @@ func connect(cmdline string) error {
 		return fmt.Errorf("Host UUID required")
 	}
 	uuid := args[1]
-	host, err := api.CheckHost(uuid);
+	host, err := api.CheckHost(uuid)
 	if err != nil {
 		return err
 	}

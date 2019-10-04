@@ -20,12 +20,12 @@ type Query struct {
 	Status   string          `json:"status"`
 }
 
-type Host struct  {
-	UUID string
-	ComputerName string
+type Host struct {
+	UUID           string
+	ComputerName   string
 	HostIdentifier string
-	Platform string
-	Version string
+	Platform       string
+	Version        string
 }
 
 var ENROLL_SECRET string
@@ -56,16 +56,16 @@ func randomString(length int) string {
 // Begin osquery API endpoints
 func enroll(w http.ResponseWriter, r *http.Request) {
 	type enrollSystemInfo struct {
-		UUID string `json:"uuid"`
+		UUID         string `json:"uuid"`
 		ComputerName string `json:"computer_name"`
 	}
 	type hostDetailsBody struct {
 		SystemInfo enrollSystemInfo `json:"system_info"`
 	}
 	type enrollBody struct {
-		EnrollSecret string          `json:"enroll_secret"`
-		HostIdentifier string        `json:"host_identifier"`
-		HostDetails  hostDetailsBody `json:"host_details"`
+		EnrollSecret   string          `json:"enroll_secret"`
+		HostIdentifier string          `json:"host_identifier"`
+		HostDetails    hostDetailsBody `json:"host_details"`
 	}
 
 	parsedBody := enrollBody{}

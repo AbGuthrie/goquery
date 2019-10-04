@@ -9,19 +9,19 @@ import (
 	"net/url"
 	"time"
 
-    "github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/hosts"
 )
 
 func init() {}
 
 func CheckHost(uuid string) (hosts.Host, error) {
-    type APIHost struct  {
-	    UUID string `json:"UUID"`
-	    ComputerName string `json:"ComputerName"`
-	    HostIdentifier string `json:"HostIdentifier"`
-	    Platform string `json:"Platform"`
-	    Version string `json:"Version"`
-    }
+	type APIHost struct {
+		UUID           string `json:"UUID"`
+		ComputerName   string `json:"ComputerName"`
+		HostIdentifier string `json:"HostIdentifier"`
+		Platform       string `json:"Platform"`
+		Version        string `json:"Version"`
+	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -40,21 +40,21 @@ func CheckHost(uuid string) (hosts.Host, error) {
 		return hosts.Host{}, fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
 	}
 
-    bodyBytes, err := ioutil.ReadAll(response.Body)
-    if err != nil {
-        return hosts.Host{}, fmt.Errorf("Could not read response")
-    }
-    hostResponse := APIHost{}
-    err = json.Unmarshal(bodyBytes, &hostResponse)
-    if err != nil {
-	     return hosts.Host{}, err
-    }
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return hosts.Host{}, fmt.Errorf("Could not read response")
+	}
+	hostResponse := APIHost{}
+	err = json.Unmarshal(bodyBytes, &hostResponse)
+	if err != nil {
+		return hosts.Host{}, err
+	}
 
 	return hosts.Host{
-		UUID: hostResponse.UUID,
-		ComputerName: hostResponse.ComputerName,
-		Platform: hostResponse.Platform,
-		Version: hostResponse.Version,
+		UUID:             hostResponse.UUID,
+		ComputerName:     hostResponse.ComputerName,
+		Platform:         hostResponse.Platform,
+		Version:          hostResponse.Version,
 		CurrentDirectory: "/",
 	}, nil
 }

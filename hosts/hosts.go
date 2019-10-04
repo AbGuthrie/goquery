@@ -17,7 +17,7 @@ type Host struct {
 	UUID             string
 	ComputerName     string
 	Platform         string
-    Version          string
+	Version          string
 	QueryHistory     []Query
 	CurrentDirectory string
 	Username         string
