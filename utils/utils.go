@@ -1,24 +1,19 @@
-// Holds utility functions like print formatting or conversion functions
+// Package utils holds utility functions like print formatting or conversion functions
 package utils
 
 import (
-	"encoding/json"
-	"fmt"
+	"github.com/AbGuthrie/goquery/config"
 )
 
-func prettyPrintQueryResultsJSON(results []map[string]string) {
-	formatted, err := json.MarshalIndent(results, "", "    ")
-	if err != nil {
-		fmt.Printf("Could not format query results.\n")
-		return
-	}
-	fmt.Printf("%s\n", formatted)
-}
-
-func PrettyPrintQueryResults(results []map[string]string, format int) {
-	switch format {
-	case 0:
+// PrettyPrintQueryResults prints a given []result map set to standard out
+// taking into consideration the current state.go's print mode
+func PrettyPrintQueryResults(results []map[string]string) {
+	currentConfig := config.GetConfig()
+	switch currentConfig.CurrentPrintMode {
+	case config.PrintJSON:
 		prettyPrintQueryResultsJSON(results)
+	case config.PrintLine:
+		prettyPrintQueryResultsLines(results)
 	default:
 	}
 }
