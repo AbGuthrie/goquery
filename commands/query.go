@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
@@ -24,20 +23,8 @@ func scheduleQuery(cmdline string) error {
 	}
 	// TODO This needs to support Unicode/Runes
 	commandStripped := cmdline[strings.Index(cmdline, " ")+1:]
-	fmt.Printf("Running '%s'\n", commandStripped)
+	results, err := api.ScheduleQueryAndWait(host.UUID, commandStripped)
 
-	queryName, err := api.ScheduleQuery(host.UUID, commandStripped)
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Query Started With Name: %s\n", queryName)
-
-	// naive timeout for results
-	time.Sleep(5 * time.Second)
-
-	results, _, err := api.FetchResults(queryName)
 	if err != nil {
 		return err
 	}

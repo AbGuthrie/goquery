@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 	"strings"
-	"time"
+	"path/filepath"
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
@@ -36,6 +36,7 @@ func changeDirectory(cmdline string) error {
 	if requestedDirectory[0] != '/' {
 		requestedDirectory = host.CurrentDirectory + requestedDirectory
 	}
+	requestedDirectory = filepath.Clean(requestedDirectory)
 
 	// All directory changes must end with a forward slash
 	if requestedDirectory[len(requestedDirectory)-1] != '/' {
@@ -43,28 +44,8 @@ func changeDirectory(cmdline string) error {
 	}
 
 	verificationQuery := fmt.Sprintf(verificationTemplate, requestedDirectory)
-	queryName, err := api.ScheduleQuery(host.UUID, verificationQuery)
+	results, err := api.ScheduleQueryAndWait(host.UUID, verificationQuery)
 
-	if err != nil {
-		return err
-	}
-
-	// TODO This should be debugging output
-	//fmt.Printf("Query Started With Name: %s\n", queryName)
-
-	// Wait while the query is pending
-	var results []map[string]string
-	var status string
-	for {
-		results, status, err = api.FetchResults(queryName)
-		if err != nil || status != "Pending" {
-			break
-		}
-		time.Sleep(2 * time.Second)
-		fmt.Printf(".")
-	}
-
-	fmt.Printf("\n")
 	if err != nil {
 		return err
 	}
