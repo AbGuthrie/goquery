@@ -4,18 +4,19 @@ package config
 
 // Config is the struct returned
 type Config struct {
-	CurrentPrintMode PrintMode
+	CurrentPrintMode string
 	Debug            bool
 }
 
 // PrintMode is a type to ensure SetPrintMode recieves a valid enum
-type PrintMode int
+type PrintMode string
 
-// PrintMode constants enum
-const (
-	PrintJSON PrintMode = 0
-	PrintLine PrintMode = 1
-)
+// PrintModes
+var PrintModes = []string {
+	"json",
+	"line",
+	"csv",
+}
 
 var config Config
 
@@ -36,6 +37,6 @@ func SetDebug(enabled bool) {
 }
 
 // SetPrintMode assigns .CurrentPrintMode on the current config struct
-func SetPrintMode(printMode PrintMode) {
+func SetPrintMode(printMode string) {
 	config.CurrentPrintMode = printMode
 }

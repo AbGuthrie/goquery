@@ -16,6 +16,24 @@ func prettyPrintQueryResultsJSON(results []map[string]string) {
 	fmt.Printf("%s\n", formatted)
 }
 
+func prettyPrintQueryResultsCSV(results []map[string]string) {
+	if len(results) == 0 {
+		return
+	}
+
+	for key := range results[0] {
+		fmt.Printf("%s,", key)
+	}
+	fmt.Printf("\n")
+
+	for _, row := range results {
+		for _, value := range row {
+			fmt.Printf("%s,", value)
+		}
+		fmt.Printf("\n")
+	}
+}
+
 func prettyPrintQueryResultsLines(results []map[string]string) {
 	fmt.Printf("\n")
 	if len(results) == 0 {

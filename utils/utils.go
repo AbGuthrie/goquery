@@ -10,10 +10,12 @@ import (
 func PrettyPrintQueryResults(results []map[string]string) {
 	currentConfig := config.GetConfig()
 	switch currentConfig.CurrentPrintMode {
-	case config.PrintJSON:
+	case "json":
 		prettyPrintQueryResultsJSON(results)
-	case config.PrintLine:
+	case "line":
 		prettyPrintQueryResultsLines(results)
+	case "csv":
+		prettyPrintQueryResultsCSV(results)
 	default:
 	}
 }
