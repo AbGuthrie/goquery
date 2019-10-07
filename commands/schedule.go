@@ -6,12 +6,11 @@ import (
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
-	"github.com/AbGuthrie/goquery/utils"
 )
 
 // TODO .query should map to Query which is blocking
 
-func query(cmdline string) error {
+func schedule(cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)
@@ -23,13 +22,13 @@ func query(cmdline string) error {
 	}
 	// TODO This needs to support Unicode/Runes
 	commandStripped := cmdline[strings.Index(cmdline, " ")+1:]
-	results, err := api.ScheduleQueryAndWait(host.UUID, commandStripped)
+	queryName, err := api.ScheduleQuery(host.UUID, commandStripped)
 
 	if err != nil {
 		return err
 	}
 
-	utils.PrettyPrintQueryResults(results)
+	fmt.Printf("Scheduled query for host. Resume with name: %s\n", queryName)
 
 	return nil
 }

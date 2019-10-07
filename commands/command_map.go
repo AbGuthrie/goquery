@@ -20,7 +20,9 @@ func init() {
 	CommandMap = map[string]GoQueryCommand{
 		".connect":    connect,
 		".disconnect": disconnect,
-		".query":      scheduleQuery,
+		".query":      query,
+		".schedule":   schedule,
+		//".resume":     resume,
 		".mode":       changeMode,
 		".exit":       exit,
 		"ls":          listDirectory,
@@ -29,7 +31,9 @@ func init() {
 	SuggestionsMap = []prompt.Suggest{
 		{".connect", "Connect to a host with UUID"},
 		{".disconnect", "Disconnect from a host with UUID"},
-		{".query", "Schedule a query on a host"},
+		{".query", "Schedule a query on a host and wait for results"},
+		{".schedule", "Schedule a query on host but don't wait for results"},
+		//{".resume", "Try to fetch results for query but don't block if unavailable"},
 		{".mode", "Change print mode (json, lines, etc)"},
 		{".exit", "Exit goquery"},
 		{"cd", "Change directories on a remote host"},
