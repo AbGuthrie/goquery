@@ -13,7 +13,7 @@ var verificationTemplate = "select * from file where path = '%s' and type = 'dir
 
 // TODO cd needs to support quoting so you can CD into folders with spaces
 
-func ChangeDirectory(cmdline string) error {
+func changeDirectory(cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)

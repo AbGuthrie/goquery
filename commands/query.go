@@ -11,7 +11,7 @@ import (
 
 // TODO .query should map to Query which is blocking
 
-func ScheduleQuery(cmdline string) error {
+func scheduleQuery(cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)
@@ -29,7 +29,7 @@ func ScheduleQuery(cmdline string) error {
 		return err
 	}
 
-	utils.PrettyPrintQueryResults(results, 0)
+	utils.PrettyPrintQueryResults(results)
 
 	return nil
 }
