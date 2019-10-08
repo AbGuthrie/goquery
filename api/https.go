@@ -9,16 +9,78 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/AbGuthrie/goquery/hosts"
 )
 
 var ctrlcChannel (chan os.Signal)
+var token string
 
 func init() {
 	ctrlcChannel = make(chan os.Signal, 1)
 	signal.Notify(ctrlcChannel, os.Interrupt)
+}
+
+func extractSSORequest(response *http.Response) (string, string) {
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", ""
+	}
+	bodyStr := string(bodyBytes)
+	// Hacky Extracts
+	loc := strings.Index(bodyStr, "name=\"SAMLRequest\"")
+	endLoc := strings.Index(bodyStr[loc+26:], "\" ")
+	samlRequest := bodyStr[loc+26:loc+26+endLoc]
+
+	loc = strings.Index(bodyStr, "name=\"RelayState\"")
+	endLoc = strings.Index(bodyStr[loc+17:], "\" ")
+	relayState := bodyStr[loc+25:loc+17+endLoc]
+	return samlRequest, relayState
+}
+
+func extractSSOResponse(response *http.Response) string {
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return ""
+	}
+	bodyStr := string(bodyBytes)
+	// Hacky Extracts
+	loc := strings.Index(bodyStr, "name=\"SAMLResponse\"")
+	endLoc := strings.Index(bodyStr[loc+27:], "\" ")
+	return bodyStr[loc+27:loc+27+endLoc]
+}
+
+func Authenticate() error {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
+	response, err := client.PostForm("https://127.0.0.1:8001/checkHost",
+		url.Values{"uuid": {"00000000-0000-0000-0000-000000000000"}},
+	)
+
+	if err != nil {
+		return fmt.Errorf("Authentication failed: %s", err)
+	}
+
+	fmt.Printf("%d\n", response.StatusCode)
+	fmt.Printf("Beginning authentication flow...\n")
+
+	ssoRequest, relayState := extractSSORequest(response)
+	fmt.Printf("SSORequest: %s\n", ssoRequest)
+	fmt.Printf("RelayState: %s\n", relayState)
+
+	response, err = http.PostForm("http://127.0.0.1:8002/sso",
+		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user" : {"alice"}, "password" : {"hunter2"}},
+	)
+	if err != nil {
+		return err
+	}
+	samlResponse := extractSSOResponse(response)
+	fmt.Printf("SAMLResponse: %s\n", samlResponse)
+	return nil
 }
 
 func CheckHost(uuid string) (hosts.Host, error) {
@@ -29,6 +91,10 @@ func CheckHost(uuid string) (hosts.Host, error) {
 		Platform       string `json:"Platform"`
 		Version        string `json:"Version"`
 	}
+
+	//TODO Remove later
+	err := Authenticate()
+	return hosts.Host{}, err
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
