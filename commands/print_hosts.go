@@ -18,12 +18,12 @@ func printHosts(cmdline string) error {
 
 	for _, host := range hosts.GetCurrentHosts() {
 		hostRows = append(hostRows, map[string]string{
-			"UUID" : host.UUID,
-			"Name" : host.ComputerName,
-			"Platform" : host.Platform,
-			"Version" : host.Version,
-			"Current Directory" : host.CurrentDirectory,
-			"Username" : host.Username,
+			"UUID":              host.UUID,
+			"Name":              host.ComputerName,
+			"Platform":          host.Platform,
+			"Version":           host.Version,
+			"Current Directory": host.CurrentDirectory,
+			"Username":          host.Username,
 		})
 	}
 
