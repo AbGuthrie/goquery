@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	//"net/http/cookiejar"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"os/signal"
@@ -18,10 +18,13 @@ import (
 
 var ctrlcChannel (chan os.Signal)
 var token string
+var cookieJar *cookiejar.Jar
 
 func init() {
 	ctrlcChannel = make(chan os.Signal, 1)
 	signal.Notify(ctrlcChannel, os.Interrupt)
+	cookieJar, _ = cookiejar.New(nil)
+	Authenticate()
 }
 
 func extractSSORequest(response *http.Response) (string, string) {
@@ -62,10 +65,9 @@ func Authenticate() error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	//cookieJar, _ := cookiejar.New(nil)
 
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
-	response, err := client.PostForm("https://127.0.0.1:8001/checkHost",
+	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
+	response, err := client.PostForm("https://localhost:8001/checkHost",
 		url.Values{"uuid": {"00000000-0000-0000-0000-000000000000"}},
 	)
 
@@ -73,13 +75,15 @@ func Authenticate() error {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
 
-	fmt.Printf("Beginning authentication flow...\n")
+	fmt.Printf("Authenticating with backend...\n")
 
 	ssoRequest, relayState := extractSSORequest(response)
-	fmt.Printf("SSORequest: %s\n", ssoRequest)
-	fmt.Printf("RelayState: %s\n", relayState)
+	//fmt.Printf("SSORequest: %s\n", ssoRequest)
+	//fmt.Printf("RelayState: %s\n", relayState)
 
-	response, err = http.PostForm("http://127.0.0.1:8002/sso",
+
+	var httpClient = &http.Client{Timeout: time.Second * 10, Jar: cookieJar}
+	response, err = httpClient.PostForm("http://localhost:8002/sso",
 		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user" : {"alice"}, "password" : {"hunter2"}},
 	)
 	if err != nil {
@@ -87,26 +91,18 @@ func Authenticate() error {
 	}
 	samlResponse, relayState := extractSSOResponse(response)
 	//fmt.Printf("SAMLResponse: %s\n", samlResponse)
-	fmt.Printf("RelayState: %s\n", relayState)
+	//fmt.Printf("RelayState: %s\n", relayState)
 
-	response, err = client.PostForm("https://127.0.0.1:8001/saml/acs",
+	response, err = client.PostForm("https://localhost:8001/saml/acs",
 		url.Values{"SAMLResponse": {samlResponse}, "RelayState" : {relayState}},
 	)
+
+	//fmt.Printf("%s\n", response.Header)
 
 	if err != nil {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
-	//spURL, _ :=  url.Parse("https://127.0.0.1:8002")
-	//for cookies := range cookieJar.Cookies(spURL) {
-	//	fmt.Printf("%v\n", cookies)
-	//}
-
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-	bodyStr := string(bodyBytes)
-	fmt.Printf(bodyStr)
+	fmt.Printf("Authentication Complete\n")
 	return nil
 }
 
@@ -120,14 +116,14 @@ func CheckHost(uuid string) (hosts.Host, error) {
 	}
 
 	//TODO Remove later
-	err := Authenticate()
-	return hosts.Host{}, err
+	//err := Authenticate()
+	//return hosts.Host{}, err
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
-	response, err := client.PostForm("https://127.0.0.1:8001/checkHost",
+	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
+	response, err := client.PostForm("https://localhost:8001/checkHost",
 		url.Values{"uuid": {uuid}},
 	)
 	if err != nil {
@@ -167,8 +163,8 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
-	response, err := client.PostForm("https://127.0.0.1:8001/scheduleQuery",
+	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
+	response, err := client.PostForm("https://localhost:8001/scheduleQuery",
 		url.Values{
 			"uuid":  {uuid},
 			"query": {query}},
@@ -235,10 +231,10 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
+	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
 	resultsResponse := ResultsResponse{}
 	response, err := client.PostForm(
-		"https://127.0.0.1:8001/fetchResults",
+		"https://localhost:8001/fetchResults",
 		url.Values{"queryName": {queryName}},
 	)
 
