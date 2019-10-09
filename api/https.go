@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	//"net/http/cookiejar"
 	"net/url"
 	"os"
 	"os/signal"
@@ -40,22 +41,29 @@ func extractSSORequest(response *http.Response) (string, string) {
 	return samlRequest, relayState
 }
 
-func extractSSOResponse(response *http.Response) string {
+func extractSSOResponse(response *http.Response) (string, string) {
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return ""
+		return "", ""
 	}
 	bodyStr := string(bodyBytes)
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLResponse\"")
 	endLoc := strings.Index(bodyStr[loc+27:], "\" ")
-	return bodyStr[loc+27:loc+27+endLoc]
+	ssoResponse := bodyStr[loc+27:loc+27+endLoc]
+
+	loc = strings.Index(bodyStr, "name=\"RelayState\"")
+	endLoc = strings.Index(bodyStr[loc+17:], "\" ")
+	relayState := bodyStr[loc+25:loc+17+endLoc]
+	return ssoResponse, relayState
 }
 
 func Authenticate() error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
+	//cookieJar, _ := cookiejar.New(nil)
+
 	var client = &http.Client{Transport: tr, Timeout: time.Second * 10}
 	response, err := client.PostForm("https://127.0.0.1:8001/checkHost",
 		url.Values{"uuid": {"00000000-0000-0000-0000-000000000000"}},
@@ -65,7 +73,6 @@ func Authenticate() error {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
 
-	fmt.Printf("%d\n", response.StatusCode)
 	fmt.Printf("Beginning authentication flow...\n")
 
 	ssoRequest, relayState := extractSSORequest(response)
@@ -78,8 +85,28 @@ func Authenticate() error {
 	if err != nil {
 		return err
 	}
-	samlResponse := extractSSOResponse(response)
-	fmt.Printf("SAMLResponse: %s\n", samlResponse)
+	samlResponse, relayState := extractSSOResponse(response)
+	//fmt.Printf("SAMLResponse: %s\n", samlResponse)
+	fmt.Printf("RelayState: %s\n", relayState)
+
+	response, err = client.PostForm("https://127.0.0.1:8001/saml/acs",
+		url.Values{"SAMLResponse": {samlResponse}, "RelayState" : {relayState}},
+	)
+
+	if err != nil {
+		return fmt.Errorf("Authentication failed: %s", err)
+	}
+	//spURL, _ :=  url.Parse("https://127.0.0.1:8002")
+	//for cookies := range cookieJar.Cookies(spURL) {
+	//	fmt.Printf("%v\n", cookies)
+	//}
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	bodyStr := string(bodyBytes)
+	fmt.Printf(bodyStr)
 	return nil
 }
 
