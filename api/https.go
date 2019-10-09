@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bufio"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -11,20 +12,46 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/AbGuthrie/goquery/hosts"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var ctrlcChannel (chan os.Signal)
 var token string
 var cookieJar *cookiejar.Jar
+var client *http.Client
+var authed bool
 
 func init() {
+	authed = false
 	ctrlcChannel = make(chan os.Signal, 1)
 	signal.Notify(ctrlcChannel, os.Interrupt)
 	cookieJar, _ = cookiejar.New(nil)
-	Authenticate()
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
+	err := Authenticate()
+	if err != nil {
+		fmt.Printf("Could not authenticate with the backend\n")
+	}
+}
+
+func credentials() (string, string) {
+    reader := bufio.NewReader(os.Stdin)
+
+    fmt.Print("Username: ")
+    username, _ := reader.ReadString('\n')
+
+    fmt.Print("Password: ")
+    bytePassword, _ := terminal.ReadPassword(int(syscall.Stdin))
+    password := string(bytePassword)
+	fmt.Printf("\n")
+    return strings.TrimSpace(username), strings.TrimSpace(password)
 }
 
 func extractSSORequest(response *http.Response) (string, string) {
@@ -44,12 +71,15 @@ func extractSSORequest(response *http.Response) (string, string) {
 	return samlRequest, relayState
 }
 
-func extractSSOResponse(response *http.Response) (string, string) {
+func extractSSOResponse(response *http.Response) (string, string, error) {
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", ""
+		return "", "", err
 	}
 	bodyStr := string(bodyBytes)
+	if strings.Index(bodyStr, "Invalid username or password") != -1 {
+		return "", "", fmt.Errorf("Credential Failure")
+	}
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLResponse\"")
 	endLoc := strings.Index(bodyStr[loc+27:], "\" ")
@@ -58,55 +88,53 @@ func extractSSOResponse(response *http.Response) (string, string) {
 	loc = strings.Index(bodyStr, "name=\"RelayState\"")
 	endLoc = strings.Index(bodyStr[loc+17:], "\" ")
 	relayState := bodyStr[loc+25:loc+17+endLoc]
-	return ssoResponse, relayState
+	return ssoResponse, relayState, nil
 }
 
 func Authenticate() error {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
-	response, err := client.PostForm("https://localhost:8001/checkHost",
-		url.Values{"uuid": {"00000000-0000-0000-0000-000000000000"}},
-	)
+	response, err := client.Get("https://localhost:8001/checkHost")
 
 	if err != nil {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
 
 	fmt.Printf("Authenticating with backend...\n")
-
 	ssoRequest, relayState := extractSSORequest(response)
-	//fmt.Printf("SSORequest: %s\n", ssoRequest)
-	//fmt.Printf("RelayState: %s\n", relayState)
+	username, password := credentials()
 
-
+	// TODO This should be an HTTPS endpoint and should use the global client
 	var httpClient = &http.Client{Timeout: time.Second * 10, Jar: cookieJar}
 	response, err = httpClient.PostForm("http://localhost:8002/sso",
-		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user" : {"alice"}, "password" : {"hunter2"}},
+		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user" : {username}, "password" : {password}},
 	)
 	if err != nil {
 		return err
 	}
-	samlResponse, relayState := extractSSOResponse(response)
-	//fmt.Printf("SAMLResponse: %s\n", samlResponse)
-	//fmt.Printf("RelayState: %s\n", relayState)
+
+	samlResponse, relayState, err := extractSSOResponse(response)
+	if err != nil {
+		return err
+	}
 
 	response, err = client.PostForm("https://localhost:8001/saml/acs",
 		url.Values{"SAMLResponse": {samlResponse}, "RelayState" : {relayState}},
 	)
 
-	//fmt.Printf("%s\n", response.Header)
-
 	if err != nil {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
 	fmt.Printf("Authentication Complete\n")
+	authed = true
 	return nil
 }
 
 func CheckHost(uuid string) (hosts.Host, error) {
+	if !authed {
+		err := Authenticate()
+		if err != nil {
+			return hosts.Host{}, err
+		}
+	}
 	type APIHost struct {
 		UUID           string `json:"UUID"`
 		ComputerName   string `json:"ComputerName"`
@@ -115,18 +143,11 @@ func CheckHost(uuid string) (hosts.Host, error) {
 		Version        string `json:"Version"`
 	}
 
-	//TODO Remove later
-	//err := Authenticate()
-	//return hosts.Host{}, err
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
 	response, err := client.PostForm("https://localhost:8001/checkHost",
 		url.Values{"uuid": {uuid}},
 	)
 	if err != nil {
+		// Possible Authentication Failure
 		return hosts.Host{}, fmt.Errorf("CheckHost call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -143,6 +164,8 @@ func CheckHost(uuid string) (hosts.Host, error) {
 	hostResponse := APIHost{}
 	err = json.Unmarshal(bodyBytes, &hostResponse)
 	if err != nil {
+		// Probable authentication failure
+		authed = false
 		return hosts.Host{}, err
 	}
 
@@ -156,20 +179,23 @@ func CheckHost(uuid string) (hosts.Host, error) {
 }
 
 func ScheduleQuery(uuid string, query string) (string, error) {
+	if !authed {
+		err := Authenticate()
+		if err != nil {
+			return "", err
+		}
+	}
 	type QueryScheduleResponse struct {
 		QueryName string `json:"queryName"`
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
 	response, err := client.PostForm("https://localhost:8001/scheduleQuery",
 		url.Values{
 			"uuid":  {uuid},
 			"query": {query}},
 	)
 	if err != nil {
+		Authenticate()
 		return "", fmt.Errorf("ScheduleQuery call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -186,6 +212,7 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	qsResponse := QueryScheduleResponse{}
 	err = json.Unmarshal(bodyBytes, &qsResponse)
 	if err != nil {
+		authed = false
 		return "", err
 	}
 	hosts.AddQueryToCurrentHost(hosts.Query{Name: qsResponse.QueryName, SQL: query})
@@ -226,19 +253,22 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 		Rows   []map[string]string `json:"results"`
 		Status string              `json:"status"`
 	}
+	resultsResponse := ResultsResponse{}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	if !authed {
+		err := Authenticate()
+		if err != nil {
+			return resultsResponse.Rows, "", err
+		}
 	}
 
-	var client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
-	resultsResponse := ResultsResponse{}
 	response, err := client.PostForm(
 		"https://localhost:8001/fetchResults",
 		url.Values{"queryName": {queryName}},
 	)
 
 	if err != nil {
+		Authenticate()
 		return resultsResponse.Rows, "", fmt.Errorf("FetchResults call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -254,6 +284,7 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 	}
 
 	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
+		authed = false
 		return resultsResponse.Rows, "", err
 	}
 
