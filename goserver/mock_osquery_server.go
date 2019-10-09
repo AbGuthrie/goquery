@@ -319,29 +319,14 @@ func fetchResults(w http.ResponseWriter, r *http.Request) {
 
 // End goquery APIs
 
-
 func doPut(url string, metadata string) error {
 	client := &http.Client{}
 	request, err := http.NewRequest("PUT", url, strings.NewReader(metadata))
 	request.ContentLength = int64(len(metadata))
-	response, err := client.Do(request)
+	_, err = client.Do(request)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		return err
-	} else {
-		defer response.Body.Close()
-		contents, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			fmt.Printf("%s\n", err)
-			return err
-		}
-		fmt.Println("The calculated length is:", len(string(contents)), "for the url:", url)
-		fmt.Println("   ", response.StatusCode)
-		hdr := response.Header
-		for key, value := range hdr {
-			fmt.Println("   ", key, ":", value)
-		}
-		fmt.Println(contents)
 	}
 	return nil
 }
