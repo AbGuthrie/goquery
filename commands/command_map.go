@@ -6,10 +6,13 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
+// GoQueryCommand the signature type all command functions must conform to
 type GoQueryCommand func(string) error
 
-// Function Map
+// CommandMap is the mapping from command line string to function call
 var CommandMap map[string]GoQueryCommand
+
+// SuggestionsMap is a prompt integration for autocomplete helpers
 var SuggestionsMap []prompt.Suggest
 
 // Errors

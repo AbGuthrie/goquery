@@ -4,6 +4,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 )
 
 func prettyPrintQueryResultsJSON(results []map[string]string) {
@@ -29,9 +30,19 @@ func prettyPrintQueryResultsLines(results []map[string]string) {
 		}
 	}
 	for _, row := range results {
-		for key, val := range row {
-			fmt.Printf("%*s = %s\n", keyPadding, key, val)
+		sortedKeys := sortedColumnKeys(row)
+		for _, key := range sortedKeys {
+			fmt.Printf("%*s = %s\n", keyPadding, key, row[key])
 		}
 		fmt.Printf("\n")
 	}
+}
+
+func sortedColumnKeys(results map[string]string) []string {
+	keys := make([]string, 0)
+	for key := range results {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
