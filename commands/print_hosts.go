@@ -13,8 +13,8 @@ func printHosts(cmdline string) error {
 		return fmt.Errorf("This commands takes no parameters")
 	}
 
-	hosts := hosts.GetCurrentHosts()
-	paddings := calculatePaddings(hosts)
+	allHosts := hosts.GetCurrentHosts()
+	paddings := calculatePaddings(allHosts)
 
 	dividerPadding := 0
 	for _, padding := range paddings {
@@ -34,7 +34,7 @@ func printHosts(cmdline string) error {
 		divider,
 	)
 	// Print rows
-	for _, host := range hosts {
+	for _, host := range allHosts {
 		fmt.Printf(
 			"%-*s | %-*s | %-*s | %-*s | %*d | %-*s\n",
 			paddings[0], host.UUID,
@@ -54,13 +54,13 @@ func calculatePaddings(hosts []hosts.Host) []int {
 
 	maxName := len("Name")
 	for _, host := range hosts {
-		if len(host.UUID) > maxName {
+		if len(host.ComputerName) > maxName {
 			maxName = len(host.UUID)
 		}
 	}
 	maxPlatform := len("Platform")
 	for _, host := range hosts {
-		if len(host.ComputerName) > maxPlatform {
+		if len(host.Platform) > maxPlatform {
 			maxPlatform = len(host.UUID)
 		}
 	}
