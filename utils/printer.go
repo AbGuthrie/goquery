@@ -29,8 +29,8 @@ func prettyPrintQueryResultsLines(results []map[string]string) {
 			keyPadding = len(key)
 		}
 	}
+	sortedKeys := sortedColumnKeys(results[0])
 	for _, row := range results {
-		sortedKeys := sortedColumnKeys(row)
 		for _, key := range sortedKeys {
 			fmt.Printf("%*s = %s\n", keyPadding, key, row[key])
 		}

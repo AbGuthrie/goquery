@@ -10,7 +10,7 @@ import (
 func history(cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) > 1 {
-		return fmt.Errorf("This commands takes no parameters")
+		return fmt.Errorf("This command takes no parameters")
 	}
 
 	host, err := hosts.GetCurrentHost()

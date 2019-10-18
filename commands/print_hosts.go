@@ -10,7 +10,7 @@ import (
 func printHosts(cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) > 1 {
-		return fmt.Errorf("This commands takes no parameters")
+		return fmt.Errorf("This command takes no parameters")
 	}
 
 	allHosts := hosts.GetCurrentHosts()
