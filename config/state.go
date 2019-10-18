@@ -13,8 +13,9 @@ type PrintMode int
 
 // PrintMode constants enum
 const (
-	PrintJSON PrintMode = 0
-	PrintLine PrintMode = 1
+	PrintJSON   PrintMode = 0
+	PrintLine   PrintMode = 1
+	PrintPretty PrintMode = 2
 )
 
 var config Config
