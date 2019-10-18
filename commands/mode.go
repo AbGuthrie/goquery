@@ -10,6 +10,7 @@ import (
 var validModes = map[string]config.PrintMode{
 	"json": config.PrintJSON,
 	"line": config.PrintLine,
+	"pretty": config.PrintPretty,
 }
 
 func changeMode(cmdline string) error {

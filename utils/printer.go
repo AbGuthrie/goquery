@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 )
 
-func prettyPrintQueryResultsJSON(results []map[string]string) {
+type Rows = []map[string]string
+
+func prettyPrintQueryResultsJSON(results Rows) {
 	fmt.Printf("\n")
 	formatted, err := json.MarshalIndent(results, "", "    ")
 	if err != nil {
@@ -17,7 +20,7 @@ func prettyPrintQueryResultsJSON(results []map[string]string) {
 	fmt.Printf("%s\n", formatted)
 }
 
-func prettyPrintQueryResultsLines(results []map[string]string) {
+func prettyPrintQueryResultsLines(results Rows) {
 	fmt.Printf("\n")
 	if len(results) == 0 {
 		return
@@ -37,6 +40,63 @@ func prettyPrintQueryResultsLines(results []map[string]string) {
 		fmt.Printf("\n")
 	}
 }
+
+func prettyPrintQueryResultsPretty(results Rows) {
+	maxLens, err := calculateMaxColumnLengths(results)
+	if err != nil {return}
+
+	keyOrder := sortedColumnKeys(results[0])
+
+	dividerLength := 0
+	for _, padding := range maxLens {
+		dividerLength += padding
+	}
+	// Then max length of all keys + divider and space (| %s ) + the final divider
+	divider := strings.Repeat("-", dividerLength+len(maxLens)*3 + 1)
+
+	// Print header
+	fmt.Printf("%s\n", divider)
+	for _, columnName := range keyOrder {
+		fmt.Printf("| %-*s ", maxLens[columnName], columnName)
+	}
+	fmt.Printf("|\n%s\n", divider)
+
+	// Print results
+	for _, row := range results {
+		for _, columnName := range keyOrder {
+			fmt.Printf("| %-*s ", maxLens[columnName], row[columnName])
+		}
+		fmt.Printf("|\n")
+	}
+
+	fmt.Printf("%s\n", divider)
+}
+
+func calculateMaxColumnLengths(results Rows) (map[string]int, error) {
+	if len(results) == 0 {
+		return map[string]int{}, fmt.Errorf("Cannot calculate lengths with no rows")
+	}
+
+	maxLengths := make(map[string]int)
+
+	// They key may be longer than the values in some cases like inode
+	for columnName, _ := range results[0] {
+		maxLengths[columnName] = len(columnName)
+	}
+
+	for _, row := range results {
+		for columnName, rowValue := range row {
+			length := len(rowValue)
+			if length <= maxLengths[columnName] {
+				continue
+			}
+			maxLengths[columnName] = len(rowValue)
+		}
+	}
+
+	return maxLengths, nil
+}
+
 
 func sortedColumnKeys(results map[string]string) []string {
 	keys := make([]string, 0)

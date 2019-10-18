@@ -15,6 +15,7 @@ type PrintMode int
 const (
 	PrintJSON PrintMode = 0
 	PrintLine PrintMode = 1
+	PrintPretty PrintMode = 2
 )
 
 var config Config

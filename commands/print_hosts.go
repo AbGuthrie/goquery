@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/utils"
 )
 
 func printHosts(cmdline string) error {
@@ -13,76 +14,20 @@ func printHosts(cmdline string) error {
 		return fmt.Errorf("This command takes no parameters")
 	}
 
-	allHosts := hosts.GetCurrentHosts()
-	paddings := calculatePaddings(allHosts)
+	hostRows := make([]map[string]string, 0)
 
-	dividerPadding := 0
-	for _, padding := range paddings {
-		dividerPadding += padding
+	for _, host := range hosts.GetCurrentHosts() {
+		hostRows = append(hostRows, map[string]string{
+			"UUID" : host.UUID,
+			"Name" : host.ComputerName,
+			"Platform" : host.Platform,
+			"Version" : host.Version,
+			"Current Directory" : host.CurrentDirectory,
+			"Username" : host.Username,
+		})
 	}
-	divider := strings.Repeat("-", dividerPadding+15)
 
-	// Print header
-	fmt.Printf(
-		"%-*s | %-*s | %-*s | %-*s | %-*s | %-*s\n%s\n",
-		paddings[0], "UUID",
-		paddings[1], "Name",
-		paddings[2], "Platform",
-		paddings[3], "Version",
-		paddings[4], "History count",
-		paddings[5], "Username",
-		divider,
-	)
-	// Print rows
-	for _, host := range allHosts {
-		fmt.Printf(
-			"%-*s | %-*s | %-*s | %-*s | %*d | %-*s\n",
-			paddings[0], host.UUID,
-			paddings[1], host.ComputerName,
-			paddings[2], host.Platform,
-			paddings[3], host.Version,
-			paddings[4], len(host.QueryHistory),
-			paddings[5], host.Username,
-		)
-	}
+	utils.PrettyPrintQueryResults(hostRows)
+
 	return nil
-}
-
-func calculatePaddings(hosts []hosts.Host) []int {
-	maxUUID := 36
-	maxHistoryCount := len("History count")
-
-	maxName := len("Name")
-	for _, host := range hosts {
-		if len(host.ComputerName) > maxName {
-			maxName = len(host.UUID)
-		}
-	}
-	maxPlatform := len("Platform")
-	for _, host := range hosts {
-		if len(host.Platform) > maxPlatform {
-			maxPlatform = len(host.UUID)
-		}
-	}
-	maxVersion := len("Version")
-	for _, host := range hosts {
-		if len(host.Version) > maxVersion {
-			maxVersion = len(host.UUID)
-		}
-	}
-	maxUsername := len("Username")
-	for _, host := range hosts {
-		if len(host.Username) > maxUsername {
-			maxUsername = len(host.UUID)
-		}
-	}
-
-	return []int{
-		maxUUID,
-		maxName,
-		maxPlatform,
-		maxVersion,
-		maxHistoryCount,
-		maxUsername,
-	}
 }
