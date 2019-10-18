@@ -119,3 +119,8 @@ func SetCurrentHostDirectory(newDirectory string) error {
 func AddQueryToCurrentHost(newQuery Query) {
 	connectedHosts[currentHostIndex].QueryHistory = append(connectedHosts[currentHostIndex].QueryHistory, newQuery)
 }
+
+// GetCurrentHosts is a public API that returns a the current state of the connectedHosts array
+func GetCurrentHosts() []Host {
+	return connectedHosts
+}
