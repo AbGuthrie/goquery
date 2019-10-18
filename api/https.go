@@ -31,6 +31,7 @@ func init() {
 	ctrlcChannel = make(chan os.Signal, 1)
 	signal.Notify(ctrlcChannel, os.Interrupt)
 	cookieJar, _ = cookiejar.New(nil)
+	// TODO InsecureSkipVerify only on DEBUG
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -42,16 +43,16 @@ func init() {
 }
 
 func credentials() (string, string) {
-    reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 
-    fmt.Print("Username: ")
-    username, _ := reader.ReadString('\n')
+	fmt.Print("Username: ")
+	username, _ := reader.ReadString('\n')
 
-    fmt.Print("Password: ")
-    bytePassword, _ := terminal.ReadPassword(int(syscall.Stdin))
-    password := string(bytePassword)
+	fmt.Print("Password: ")
+	bytePassword, _ := terminal.ReadPassword(int(syscall.Stdin))
+	password := string(bytePassword)
 	fmt.Printf("\n")
-    return strings.TrimSpace(username), strings.TrimSpace(password)
+	return strings.TrimSpace(username), password
 }
 
 func extractSSORequest(response *http.Response) (string, string) {
@@ -63,11 +64,11 @@ func extractSSORequest(response *http.Response) (string, string) {
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLRequest\"")
 	endLoc := strings.Index(bodyStr[loc+26:], "\" ")
-	samlRequest := bodyStr[loc+26:loc+26+endLoc]
+	samlRequest := bodyStr[loc+26 : loc+26+endLoc]
 
 	loc = strings.Index(bodyStr, "name=\"RelayState\"")
 	endLoc = strings.Index(bodyStr[loc+17:], "\" ")
-	relayState := bodyStr[loc+25:loc+17+endLoc]
+	relayState := bodyStr[loc+25 : loc+17+endLoc]
 	return samlRequest, relayState
 }
 
@@ -83,11 +84,11 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLResponse\"")
 	endLoc := strings.Index(bodyStr[loc+27:], "\" ")
-	ssoResponse := bodyStr[loc+27:loc+27+endLoc]
+	ssoResponse := bodyStr[loc+27 : loc+27+endLoc]
 
 	loc = strings.Index(bodyStr, "name=\"RelayState\"")
 	endLoc = strings.Index(bodyStr[loc+17:], "\" ")
-	relayState := bodyStr[loc+25:loc+17+endLoc]
+	relayState := bodyStr[loc+25 : loc+17+endLoc]
 	return ssoResponse, relayState, nil
 }
 
@@ -105,7 +106,7 @@ func Authenticate() error {
 	// TODO This should be an HTTPS endpoint and should use the global client
 	var httpClient = &http.Client{Timeout: time.Second * 10, Jar: cookieJar}
 	response, err = httpClient.PostForm("http://localhost:8002/sso",
-		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user" : {username}, "password" : {password}},
+		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user": {username}, "password": {password}},
 	)
 	if err != nil {
 		return err
@@ -117,7 +118,7 @@ func Authenticate() error {
 	}
 
 	response, err = client.PostForm("https://localhost:8001/saml/acs",
-		url.Values{"SAMLResponse": {samlResponse}, "RelayState" : {relayState}},
+		url.Values{"SAMLResponse": {samlResponse}, "RelayState": {relayState}},
 	)
 
 	if err != nil {
@@ -236,10 +237,10 @@ func ScheduleQueryAndWait(uuid string, query string) ([]map[string]string, error
 		time.Sleep(time.Second)
 		fmt.Printf(".")
 		select {
-			case <-ctrlcChannel:
-				//fmt.Printf("Received Signal: %s", x)
-				return results, fmt.Errorf("Waiting Cancelled")
-			default:
+		case <-ctrlcChannel:
+			//fmt.Printf("Received Signal: %s", x)
+			return results, fmt.Errorf("Waiting Cancelled")
+		default:
 		}
 	}
 

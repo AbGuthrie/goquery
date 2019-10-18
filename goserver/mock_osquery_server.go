@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-    "crypto/rsa"
+	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -377,10 +377,10 @@ func main() {
 		}
 
 		samlSP, _ := samlsp.New(samlsp.Options{
-			URL:            *rootURL,
-			Key:            keyPair.PrivateKey.(*rsa.PrivateKey),
-			Certificate:    keyPair.Leaf,
-			IDPMetadataURL: idpMetadataURL,
+			URL:               *rootURL,
+			Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
+			Certificate:       keyPair.Leaf,
+			IDPMetadataURL:    idpMetadataURL,
 			AllowIDPInitiated: true,
 		})
 
@@ -388,7 +388,7 @@ func main() {
 		fmt.Printf("Registering ourselves with the IDP Service\n")
 		var b bytes.Buffer
 		enc := xml.NewEncoder(&b)
-		samlSP.ServiceProvider.Metadata().MarshalXML(enc, xml.StartElement{});
+		samlSP.ServiceProvider.Metadata().MarshalXML(enc, xml.StartElement{})
 		for {
 			err = doPut("http://goserversaml:8002/services/:goserver", b.String())
 			if err == nil {

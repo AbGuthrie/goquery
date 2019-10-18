@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 	"path/filepath"
+	"strings"
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
