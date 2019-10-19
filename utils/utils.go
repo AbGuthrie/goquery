@@ -14,6 +14,8 @@ func PrettyPrintQueryResults(results []map[string]string) {
 		prettyPrintQueryResultsJSON(results)
 	case config.PrintLine:
 		prettyPrintQueryResultsLines(results)
+	case config.PrintPretty:
+		prettyPrintQueryResultsPretty(results)
 	default:
 	}
 }
