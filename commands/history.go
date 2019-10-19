@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/AbGuthrie/goquery/hosts"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 func history(cmdline string) error {
@@ -25,4 +27,12 @@ func history(cmdline string) error {
 	}
 
 	return nil
+}
+
+func historyHelp() string {
+	return "Print the current host's query history from the current session"
+}
+
+func historySuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
 }

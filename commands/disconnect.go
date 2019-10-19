@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/AbGuthrie/goquery/hosts"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 func disconnect(cmdline string) error {
@@ -20,4 +22,16 @@ func disconnect(cmdline string) error {
 	fmt.Printf("Disconnected from '%s'\n", uuid)
 
 	return nil
+}
+
+func disconnectHelp() string {
+	return "Disconnect from a host with UUID"
+}
+
+func disconnectSuggest(cmdline string) []prompt.Suggest {
+	prompts := []prompt.Suggest{}
+	for _, host := range hosts.GetCurrentHosts() {
+		prompts = append(prompts, prompt.Suggest{host.UUID, host.ComputerName})
+	}
+	return prompts
 }

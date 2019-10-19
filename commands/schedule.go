@@ -6,9 +6,9 @@ import (
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
-)
 
-// TODO .query should map to Query which is blocking
+	prompt "github.com/c-bata/go-prompt"
+)
 
 func schedule(cmdline string) error {
 	host, err := hosts.GetCurrentHost()
@@ -31,4 +31,12 @@ func schedule(cmdline string) error {
 	fmt.Printf("Scheduled query for host. Resume with name: %s\n", queryName)
 
 	return nil
+}
+
+func scheduleHelp() string {
+	return "Schedule a query on a host but don't wait for results"
+}
+
+func scheduleSuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
 }

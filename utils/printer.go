@@ -11,7 +11,6 @@ import (
 type Rows = []map[string]string
 
 func prettyPrintQueryResultsJSON(results Rows) {
-	fmt.Printf("\n")
 	formatted, err := json.MarshalIndent(results, "", "    ")
 	if err != nil {
 		fmt.Printf("Could not format query results.\n")
@@ -21,7 +20,6 @@ func prettyPrintQueryResultsJSON(results Rows) {
 }
 
 func prettyPrintQueryResultsLines(results Rows) {
-	fmt.Printf("\n")
 	if len(results) == 0 {
 		return
 	}

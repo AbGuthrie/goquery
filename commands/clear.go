@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 func clear(cmdline string) error {
@@ -25,4 +27,12 @@ func clear(cmdline string) error {
 		print("\033[H\033[2J")
 	}
 	return nil
+}
+
+func clearHelp() string {
+	return "Clear the terminal screen"
+}
+
+func clearSuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
 }

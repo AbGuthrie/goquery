@@ -6,6 +6,8 @@ import (
 
 	"github.com/AbGuthrie/goquery/hosts"
 	"github.com/AbGuthrie/goquery/utils"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 func printHosts(cmdline string) error {
@@ -30,4 +32,12 @@ func printHosts(cmdline string) error {
 	utils.PrettyPrintQueryResults(hostRows)
 
 	return nil
+}
+
+func printHostsHelp() string {
+	return "Prints out all connected hosts"
+}
+
+func printHostsSuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
 }
