@@ -6,6 +6,8 @@ import (
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 func connect(cmdline string) error {
@@ -26,4 +28,16 @@ func connect(cmdline string) error {
 	fmt.Printf("Successfully connected to '%s'.\n", uuid)
 
 	return nil
+}
+
+func connectHelp() string {
+	return "Connect to a host with UUID"
+}
+
+func connectSuggest(cmdline string) []prompt.Suggest {
+	prompts := []prompt.Suggest{}
+	for _, host := range hosts.GetCurrentHosts() {
+		prompts = append(prompts, prompt.Suggest{host.UUID, host.ComputerName})
+	}
+	return prompts
 }

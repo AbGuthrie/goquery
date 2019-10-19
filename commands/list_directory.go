@@ -7,6 +7,8 @@ import (
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
 	"github.com/AbGuthrie/goquery/utils"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 // TODO .query should map to Query which is blocking
@@ -30,4 +32,12 @@ func listDirectory(cmdline string) error {
 
 	utils.PrettyPrintQueryResults(results)
 	return nil
+}
+
+func listDirectoryHelp() string {
+	return "List the files in the current directory on the remote host"
+}
+
+func listDirectorySuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
 }

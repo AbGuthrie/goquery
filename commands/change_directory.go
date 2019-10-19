@@ -7,6 +7,8 @@ import (
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/hosts"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 var verificationTemplate = "select * from file where path = '%s' and type = 'directory'"
@@ -57,4 +59,12 @@ func changeDirectory(cmdline string) error {
 	}
 
 	return nil
+}
+
+func changeDirectoryHelp() string {
+	return "Change directories on a remote host"
+}
+
+func changeDirectorySuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
 }
