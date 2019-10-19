@@ -8,21 +8,44 @@ Using osquery's distributed API, hosts can be targeted for single queries to pul
 
 ## Commands
 
+### .clear
+Clear the terminal screen
+
 ### .connect <UUID>
-This opens a session with a remote host. It will ask the backend if a host with that UUID is registered and if not return to the user saying it doesn't exist. If the backend returns that the host exists then a session is opened and that machine is set as the active host. All future commands will interact with this host until it's disconnected from or the user changes to another host.
+This opens a session with a remote host. It will ask the backend if a host with that UUID is registered and if not return to the user saying it doesn't exist. If the backend returns that the host exists then a session is opened and that machine is set as the active host. All future commands will interact with this host until it's disconnected from or the user changes to another host. Supports suggestions.
 
-### .schedule <query>
-Run a query asyncronously on the remote host. The query will be tracked in the session for that host so results can be fetched at any point in time, but this allows the investigator to kick off a bunch of things without waiting for each one to complete first.
-
-### .resume <queryName>
-This will either wait for a query to complete or fetch the results and display them if the query has already posted results. This is used in conjunction with .schedule to pull the results of queries that are running asynchronously. This can also be used to display the results of any previously run query.
-
-### .query <query>
-Like .schedule and .resume together. Runs a query on a remote host and waits for the result before returning control to the REPL.
+### .disconnect <UUID>
+Close a session with a remote host. Fails if you're not connected to a host with that UUID. Supports suggestions.
 
 ### .exit
 Exit goquery. Shell state will not be saved but command history is.
 
+### .help
+Show goquery help formatted with the currently selected printing mode.
+
+### .history
+Show all past queries in the current session for the current host.
+
+### .hosts
+Show all hosts you are connected to with their osquery version, hostname, UUID, and platform
+
+### .mode <PrintMode>
+Change the printing mode. goquery supports multiple printing modes to help you make sense of data at a glance. We currently support: Line, JSON, and Pretty (default).
+
+### .query <query>
+Like .schedule and .resume together. Runs a query on a remote host and waits for the result before returning control to the REPL.
+
+### .resume <queryName>
+This will either wait for a query to complete or fetch the results and display them if the query has already posted results. This is used in conjunction with .schedule to pull the results of queries that are running asynchronously. This can also be used to display the results of any previously run query.
+
+### .schedule <query>
+Run a query asyncronously on the remote host. The query will be tracked in the session for that host so results can be fetched at any point in time, but this allows the investigator to kick off a bunch of things without waiting for each one to complete first.
+
+### cd <DIR>
+Change directories on a remote host. This affects other pseudo-commands like `ls`.
+
+### ls
+List the files in the current directory. The current directory is set by using the `cd` command and starts at `/`.
 
 ## API
 
@@ -45,6 +68,13 @@ Pull the results of a query by the name returned from scheduleQuery
 
 
 ## Building
+
+### Docker Testing Infra
+Hopefully one day goquery will be plug'n'play with the most popular osquery backends, but for now it'll take a little work to integrate. To get up and running playing with goquery as quickly as possible, you can use the docker test infra.
+
+Running `make docker` will build a set of nodes used to create a simulated osquery deployment with two Ubuntu hosts, a central osquery server, along with a SAML IdP. goquery contains its own osquery server written in Go which is designed to be lightweight and easy to understand to help you learn how to integrate goquery into your enterprise.
+
+Deploy it locally with `make deploy` (which uses docker swarm) and then you're ready to start testing by running goquery.
 
 [Install go via asdf install .toolversions](https://asdf-vm.com/#/core-manage-asdf-vm)
 
