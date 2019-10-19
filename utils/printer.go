@@ -43,7 +43,9 @@ func prettyPrintQueryResultsLines(results Rows) {
 
 func prettyPrintQueryResultsPretty(results Rows) {
 	maxLens, err := calculateMaxColumnLengths(results)
-	if err != nil {return}
+	if err != nil {
+		return
+	}
 
 	keyOrder := sortedColumnKeys(results[0])
 
@@ -52,7 +54,7 @@ func prettyPrintQueryResultsPretty(results Rows) {
 		dividerLength += padding
 	}
 	// Then max length of all keys + divider and space (| %s ) + the final divider
-	divider := strings.Repeat("-", dividerLength+len(maxLens)*3 + 1)
+	divider := strings.Repeat("-", dividerLength+len(maxLens)*3+1)
 
 	// Print header
 	fmt.Printf("%s\n", divider)
@@ -96,7 +98,6 @@ func calculateMaxColumnLengths(results Rows) (map[string]int, error) {
 
 	return maxLengths, nil
 }
-
 
 func sortedColumnKeys(results map[string]string) []string {
 	keys := make([]string, 0)

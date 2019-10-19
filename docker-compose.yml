@@ -1,8 +1,17 @@
 version: "3"
 
 services:
+  goserversaml:
+    image: goserversaml:latest
+    ports:
+      - "8002:8002"
+    networks:
+      - private-net
+      - public-net
   goserver:
     image: goserver:latest
+    depends_on:
+      - "goserversaml"
     ports:
       - "8001:8001"
     networks:
