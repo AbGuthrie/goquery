@@ -33,6 +33,7 @@ func init() {
 		".clear":      GoQueryCommand{clear, clearHelp, clearSuggest},
 		".mode":       GoQueryCommand{changeMode, changeModeHelp, changeModeSuggest},
 		".exit":       GoQueryCommand{exit, exitHelp, exitSuggest},
+		".help":       GoQueryCommand{help, helpHelp, helpSuggest},
 		"ls":          GoQueryCommand{listDirectory, listDirectoryHelp, listDirectorySuggest},
 		"cd":          GoQueryCommand{changeDirectory, changeDirectoryHelp, changeDirectorySuggest},
 	}

@@ -24,6 +24,7 @@ func init() {
 	// TODO this module should be able to load config
 	// defaults from a .config file in ~/.goquery
 	// and should configure host aliases or default hosts
+	SetPrintMode(PrintPretty)
 }
 
 // GetConfig returns a copy of the current state struct
