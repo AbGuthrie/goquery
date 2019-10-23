@@ -81,3 +81,37 @@ Deploy it locally with `make deploy` (which uses docker swarm) and then you're r
 Add go plugin: `asdf plugin-add golang https://github.com/kennyp/asdf-golang.git`
 
 and finally `asdf install`
+
+
+## Config
+
+TODO
+
+{
+    "debugEnabled": true,
+
+    /*
+    Print modes:
+        JSON    = 0
+        Line    = 1
+        Pretty  = 2
+    */
+    "printMode": 2,
+
+    /*
+    Aliases:
+        List persistent aliases here. commands matching "name"
+        will instead execute the value of "command"
+        Use $# for interpolation
+    */
+    "aliases": [
+        {
+            "name": ".quit",
+            "command": ".exit"
+        },
+        {
+            "name": ".all",
+            "command": ".query select * from $#"
+        }
+    ]
+}

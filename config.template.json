@@ -1,20 +1,6 @@
 {
     "debugEnabled": true,
-
-    /*
-    Print modes:
-        JSON    = 0
-        Line    = 1
-        Pretty  = 2
-    */
     "printMode": 2,
-
-    /*
-    Aliases:
-        List persistent aliases here. commands matching "name"
-        will instead execute the value of "command"
-        Use $# for interpolation
-    */
     "aliases": [
         {
             "name": ".quit",
@@ -23,6 +9,10 @@
         {
             "name": ".all",
             "command": ".query select * from $#"
+        },
+        {
+            "name": ".recurse",
+            "command": ".all $#"
         }
     ]
 }

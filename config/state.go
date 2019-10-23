@@ -11,7 +11,8 @@ import (
 	"path"
 )
 
-type alias struct {
+// TODO
+type Alias struct {
 	Name    string `json:"name"`
 	Command string `json:"command"`
 }
@@ -20,7 +21,7 @@ type alias struct {
 type Config struct {
 	CurrentPrintMode PrintMode `json:"printMode"`
 	Debug            bool      `json:"debugEnabled"`
-	Aliases          []alias   `json:"aliases"`
+	Aliases          []Alias   `json:"aliases"`
 	Experimental     bool      `json:"experimental"`
 }
 
@@ -72,6 +73,8 @@ func init() {
 	if config.Debug == true {
 		fmt.Printf("Debug logging enabled\n")
 	}
+
+	// TODO on alias load and parse, assert that no cyclical aliases
 }
 
 // GetConfig returns a copy of the current state struct
