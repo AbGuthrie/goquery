@@ -25,7 +25,25 @@ func connect(cmdline string) error {
 	if err := hosts.Register(host); err != nil {
 		return fmt.Errorf("Error connecting to host: %s", err)
 	}
-	fmt.Printf("Successfully connected to '%s'.\n", uuid)
+	fmt.Printf("Verified Host(%s) Exists.\n", uuid)
+
+	results, err := api.ScheduleQueryAndWait(
+		host.UUID,
+		"select name from osquery_registry where registry = 'table' and active = 1",
+	)
+
+	if err != nil {
+		return err
+	}
+
+	tables := make([]string, len(results))
+	for _, row := range results {
+		// Probably unneeded guard against bad osquery/api data
+		if table, ok := row["name"]; ok {
+			tables = append(tables, table)
+		}
+	}
+	hosts.SetHostTables(uuid, tables)
 
 	return nil
 }

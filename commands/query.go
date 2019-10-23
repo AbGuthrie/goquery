@@ -39,5 +39,28 @@ func queryHelp() string {
 }
 
 func querySuggest(cmdline string) []prompt.Suggest {
-	return []prompt.Suggest{}
+	parts := strings.Split(cmdline, " ")
+	// The cmdline doesn't have enough components
+	if len(parts) < 2 {
+		return []prompt.Suggest{}
+	}
+
+	// If they've anything other than "from "
+	if parts[len(parts)-2] != "from" || len(parts[len(parts)-1]) == 0 {
+		return []prompt.Suggest{}
+	}
+
+	prompts := []prompt.Suggest{}
+
+	// There is no connected host
+	host, err := hosts.GetCurrentHost()
+	if err != nil {
+		return prompts
+	}
+
+	for _, table := range host.Tables {
+		prompts = append(prompts, prompt.Suggest{table, ""})
+	}
+
+	return prompts
 }
