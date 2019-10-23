@@ -216,7 +216,7 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 		authed = false
 		return "", err
 	}
-	hosts.AddQueryToCurrentHost(hosts.Query{Name: qsResponse.QueryName, SQL: query})
+	hosts.AddQueryToHost(uuid, hosts.Query{Name: qsResponse.QueryName, SQL: query})
 	return qsResponse.QueryName, nil
 }
 

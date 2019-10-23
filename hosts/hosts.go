@@ -21,6 +21,7 @@ type Host struct {
 	QueryHistory     []Query
 	CurrentDirectory string
 	Username         string
+	Tables           []string
 }
 
 func (host *Host) SetCurrentDirectory(newDirectory string) error {
@@ -116,8 +117,26 @@ func SetCurrentHostDirectory(newDirectory string) error {
 	return connectedHosts[currentHostIndex].SetCurrentDirectory(newDirectory)
 }
 
-func AddQueryToCurrentHost(newQuery Query) {
-	connectedHosts[currentHostIndex].QueryHistory = append(connectedHosts[currentHostIndex].QueryHistory, newQuery)
+func SetHostTables(uuid string, tables []string) {
+	for index, _ := range connectedHosts {
+		if connectedHosts[index].UUID != uuid {
+			continue
+		}
+		connectedHosts[index].Tables = tables
+		return
+	}
+	panic("Setting Tables On Unconnected Host!! Something is very wrong!")
+}
+
+func AddQueryToHost(uuid string, newQuery Query) {
+	for index, _ := range connectedHosts {
+		if connectedHosts[index].UUID != uuid {
+			continue
+		}
+		connectedHosts[index].QueryHistory = append(connectedHosts[index].QueryHistory, newQuery)
+		return
+	}
+	panic("Query Ran On Unconnected Host!! Something is very wrong!")
 }
 
 // GetCurrentHosts is a public API that returns a the current state of the connectedHosts array

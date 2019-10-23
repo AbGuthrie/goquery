@@ -6,6 +6,7 @@ package config
 type Config struct {
 	CurrentPrintMode PrintMode
 	Debug            bool
+	Experimental     bool
 }
 
 // PrintMode is a type to ensure SetPrintMode recieves a valid enum
@@ -35,6 +36,18 @@ func GetConfig() Config {
 // SetDebug assigns .Debug on the current config struct
 func SetDebug(enabled bool) {
 	config.Debug = enabled
+}
+
+func GetDebug() bool {
+	return config.Debug
+}
+
+func SetExperimental(enabled bool) {
+	config.Experimental = enabled
+}
+
+func GetExperimental() bool {
+	return config.Experimental
 }
 
 // SetPrintMode assigns .CurrentPrintMode on the current config struct
