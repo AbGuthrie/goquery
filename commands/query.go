@@ -46,7 +46,7 @@ func querySuggest(cmdline string) []prompt.Suggest {
 	}
 
 	// If they've anything other than "from "
-	if parts[len(parts)-2] != "from" || len(parts[len(parts)-1]) == 0 {
+	if parts[len(parts)-2] != "from" {
 		return []prompt.Suggest{}
 	}
 
@@ -57,7 +57,6 @@ func querySuggest(cmdline string) []prompt.Suggest {
 	if err != nil {
 		return prompts
 	}
-
 	for _, table := range host.Tables {
 		prompts = append(prompts, prompt.Suggest{table, ""})
 	}

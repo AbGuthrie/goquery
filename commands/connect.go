@@ -36,7 +36,7 @@ func connect(cmdline string) error {
 		return err
 	}
 
-	tables := make([]string, len(results))
+	tables := make([]string, 0)
 	for _, row := range results {
 		// Probably unneeded guard against bad osquery/api data
 		if table, ok := row["name"]; ok {
