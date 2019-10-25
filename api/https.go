@@ -15,6 +15,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AbGuthrie/goquery/config"
+
 	"github.com/AbGuthrie/goquery/hosts"
 
 	"golang.org/x/crypto/ssh/terminal"
@@ -31,9 +33,10 @@ func init() {
 	ctrlcChannel = make(chan os.Signal, 1)
 	signal.Notify(ctrlcChannel, os.Interrupt)
 	cookieJar, _ = cookiejar.New(nil)
-	// TODO InsecureSkipVerify only on DEBUG
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: config.GetConfig().DebugEnabled,
+		},
 	}
 	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
 	err := Authenticate()
@@ -238,7 +241,6 @@ func ScheduleQueryAndWait(uuid string, query string) ([]map[string]string, error
 		fmt.Printf(".")
 		select {
 		case <-ctrlcChannel:
-			//fmt.Printf("Received Signal: %s", x)
 			return results, fmt.Errorf("Waiting Cancelled")
 		default:
 		}

@@ -9,9 +9,10 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 )
 
-// TODO
+// Alias is the struct used to allow abstracted commands
 type Alias struct {
 	Name    string `json:"name"`
 	Command string `json:"command"`
@@ -20,7 +21,7 @@ type Alias struct {
 // Config is the struct containing the application state
 type Config struct {
 	CurrentPrintMode PrintMode `json:"printMode"`
-	Debug            bool      `json:"debugEnabled"`
+	DebugEnabled     bool      `json:"debugEnabled"`
 	Aliases          []Alias   `json:"aliases"`
 	Experimental     bool      `json:"experimental"`
 }
@@ -70,11 +71,22 @@ func init() {
 	}
 
 	config = *decoded
-	if config.Debug == true {
-		fmt.Printf("Debug logging enabled\n")
+	if config.DebugEnabled == true {
+		fmt.Printf("Debug mode on\n")
 	}
 
+	// Verify loaded aliases
+	for _, alias := range config.Aliases {
+		if len(strings.Split(name, " ")) > 1 {
+			return fmt.Errorf("Aliases must not contain spaces")
+		}
+		if AliasIsCyclic(alias) {
+			// TODO
+		}
+	}
 	// TODO on alias load and parse, assert that no cyclical aliases
+	// TODO ensure aliases have no spaces in the command name
+
 }
 
 // GetConfig returns a copy of the current state struct
@@ -84,7 +96,7 @@ func GetConfig() Config {
 
 // SetDebug assigns .Debug on the current config struct
 func SetDebug(enabled bool) {
-	config.Debug = enabled
+	config.DebugEnabled = enabled
 }
 
 func GetDebug() bool {
@@ -124,4 +136,27 @@ func parseConfigPath(args []string) (string, error) {
 		return "", fmt.Errorf("File '%s' does not exist", argPath)
 	}
 	return argPath, nil
+}
+
+// AddAlias adds registers a new alias in the config
+func AddAlias(name, command string) error {
+	if len(strings.Split(name, " ")) > 1 {
+		return fmt.Errorf("Aliases must not contain spaces")
+	}
+	newAlias := Alias{
+		Name:    name,
+		Command: command,
+	}
+	// Check is cyclic
+	if AliasIsCyclic(newAlias) {
+		return fmt.Errorf("Alias creates an infinite loop")
+	}
+	config.Aliases = append(config.Aliases, newAlias)
+	return nil
+}
+
+// AliasIsCyclic is a check to ensure that the aliases do not form an infinite loop
+func AliasIsCyclic(alias Alias) bool {
+	// TODO
+	return false
 }
