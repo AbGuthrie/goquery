@@ -38,5 +38,5 @@ func scheduleHelp() string {
 }
 
 func scheduleSuggest(cmdline string) []prompt.Suggest {
-	return []prompt.Suggest{}
+	return querySuggest(cmdline)
 }
