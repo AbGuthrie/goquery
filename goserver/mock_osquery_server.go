@@ -192,7 +192,11 @@ func distributedRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderedQueries = strings.TrimRight(renderedQueries, ",")
-	fmt.Fprintf(w, "{\"queries\" : {%s}}", renderedQueries)
+	if len(renderedQueries) > 0 {
+		fmt.Fprintf(w, "{\"queries\" : {%s}, \"accelerate\" : 300}", renderedQueries)
+	} else {
+		fmt.Fprintf(w, "{\"queries\" : {%s}}", renderedQueries)
+	}
 }
 
 func distributedWrite(w http.ResponseWriter, r *http.Request) {

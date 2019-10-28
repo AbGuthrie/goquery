@@ -12,6 +12,6 @@
 --disable_distributed=false
 --distributed_tls_read_endpoint=/distributedRead
 --distributed_tls_write_endpoint=/distributedWrite
---distributed_interval=5
+--distributed_interval=30
 --tls_server_certs=/etc/osquery/server.crt
 --host_identifier=ephemeral
