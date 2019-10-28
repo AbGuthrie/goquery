@@ -1,5 +1,6 @@
 {
     "debugEnabled": true,
+    "experimental": false,
     "printMode": "pretty",
     "aliases": [
         {
