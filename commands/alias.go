@@ -10,8 +10,9 @@ import (
 
 func alias(cmdline string) error {
 	args := strings.Split(cmdline, " ")
+
+	// If no args provided, print current state of aliases
 	if len(args) == 1 {
-		// No args provided, print current state of aliases
 		aliases := config.GetConfig().Aliases
 		if len(aliases) == 0 {
 			fmt.Printf("No aliases set\n")
@@ -19,9 +20,21 @@ func alias(cmdline string) error {
 		}
 		fmt.Printf("Available aliases:\n\n")
 		for _, alias := range aliases {
-			fmt.Printf("Name: %s\nCommand: %s\n\n", alias.Name, alias.Command)
-			return nil
+			fmt.Printf("Name:    %s\nCommand: %s\n\n", alias.Name, alias.Command)
 		}
+		return nil
+	}
+
+	// If remove argument provided, try remove alias from config
+	if args[1] == "--remove" {
+		if len(args) == 2 {
+			return fmt.Errorf("--remove flag requires an alias name argument")
+		}
+		if err := config.RemoveAlias(args[2]); err != nil {
+			return err
+		}
+		fmt.Printf("Successfully removed alias\n")
+		return nil
 	}
 
 	// Otherwise create a new alias
@@ -44,18 +57,12 @@ func alias(cmdline string) error {
 
 func aliasHelp() string {
 	return "Create a new alias or call with no arguments to list current aliases. " +
-		"The format for creating an alias is as follows: ALIAS_NAME .example arg1 $# arg3"
+		"The format for creating an alias is as follows: ALIAS_NAME .example arg1 $# arg3" +
+		"To remove an alias, use .alias --remove ALIAS_NAME"
 }
 
 func aliasSuggest(cmdline string) []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
-	for _, alias := range config.GetConfig().Aliases {
-		suggestions = append(suggestions, prompt.Suggest{
-			Text:        alias.Name,
-			Description: alias.Command,
-		})
-	}
-	return suggestions
+	return []prompt.Suggest{}
 }
 
 // FindAlias searches the list of named aliases and returns the Alias struct if found

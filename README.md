@@ -47,6 +47,8 @@ command is run, for example the following alias `.all` with command `.query sele
 
 Command name must not contain any spaces in order to preserve the space delimmitted arguments
 
+To remove an alias, use `.alias --remove ALIAS_NAME`
+
 ### cd \<DIR\>
 Change directories on a remote host. This affects other pseudo-commands like `ls`.
 

@@ -54,6 +54,7 @@ func executor(input string) {
 	}()
 
 	// Separate command and arguments
+	input = strings.TrimSpace(input)
 	args := strings.Split(input, " ")
 	if len(args) == 0 {
 		return
@@ -63,7 +64,7 @@ func executor(input string) {
 	if command, ok := commands.CommandMap[args[0]]; ok {
 		err := command.Execute(input)
 		if err != nil {
-			fmt.Printf("%s: %s!\n", args[0], err.Error())
+			fmt.Printf("%s: %s\n", args[0], err.Error())
 		}
 		return
 	}

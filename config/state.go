@@ -71,9 +71,6 @@ func init() {
 	}
 
 	config = *decoded
-	if config.DebugEnabled == true {
-		fmt.Printf("Debug mode on\n")
-	}
 
 	// Validate/filter loaded aliases
 	validAliases := []Alias{}
@@ -82,6 +79,12 @@ func init() {
 			fmt.Printf("Aliases error: Name '%s' must not contain spaces\n", alias.Name)
 			continue
 		}
+		for _, existing := range validAliases {
+			if alias.Name == existing.Name {
+				fmt.Printf("Aliases name '%s' is a duplicate of an existing alias\n", alias.Name)
+				continue
+			}
+		}
 		if AliasIsCyclic(alias) {
 			fmt.Printf("Alias error: '%s' creates an infinite loop\n", alias.Name)
 			continue
@@ -89,6 +92,13 @@ func init() {
 		validAliases = append(validAliases, alias)
 	}
 	config.Aliases = validAliases
+
+	if config.DebugEnabled {
+		fmt.Printf("Debug mode on\n")
+		fmt.Printf("Initialized with print mode '%s'\n", config.CurrentPrintMode)
+		fmt.Printf("Loaded %d aliase(s)\n", len(config.Aliases))
+		fmt.Println("")
+	}
 }
 
 // GetConfig returns a copy of the current state struct
@@ -145,6 +155,12 @@ func AddAlias(name, command string) error {
 	if len(strings.Split(name, " ")) > 1 {
 		return fmt.Errorf("Aliases must not contain spaces")
 	}
+	// Ensure not conflicting names
+	for _, alias := range config.Aliases {
+		if alias.Name == name {
+			return fmt.Errorf("Aliases name '%s' is a duplicate of an existing alias", name)
+		}
+	}
 	newAlias := Alias{
 		Name:    name,
 		Command: command,
@@ -157,8 +173,49 @@ func AddAlias(name, command string) error {
 	return nil
 }
 
+// RemoveAlias an alias in the config
+func RemoveAlias(name string) error {
+	index := -1
+	for i, alias := range config.Aliases {
+		if name == alias.Name {
+			index = i
+			break
+		}
+	}
+	if index == -1 {
+		return fmt.Errorf("Alias '%s' not found", name)
+	}
+	config.Aliases = append(config.Aliases[:index], config.Aliases[index+1:]...)
+	return nil
+}
+
 // AliasIsCyclic is a check to ensure that the aliases do not form an infinite loop
 func AliasIsCyclic(alias Alias) bool {
-	// TODO
-	return false
+	graph := make(map[string]string)
+	aliases := config.Aliases
+	aliases = append(config.Aliases, alias)
+
+	for _, alias := range aliases {
+		next := strings.Split(alias.Command, " ")[0]
+		graph[alias.Name] = next
+	}
+	return isCyclic(alias.Name, []string{}, graph)
+}
+
+func isCyclic(next string, visited []string, nodes map[string]string) bool {
+	// Was next node was already visited?
+	for _, visitedCommand := range visited {
+		// If so, aliases are cyclic, return
+		if next == visitedCommand {
+			return true
+		}
+	}
+	// If next is not an alias, all good, no alias loop
+	newNext, ok := nodes[next]
+	if !ok {
+		return false
+	}
+	// Otherwise, continue traversing through aliases
+	visited = append(visited, next)
+	return isCyclic(newNext, visited, nodes)
 }
