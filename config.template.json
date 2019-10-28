@@ -1,6 +1,6 @@
 {
     "debugEnabled": true,
-    "printMode": 2,
+    "printMode": "pretty",
     "aliases": [
         {
             "name": ".quit",

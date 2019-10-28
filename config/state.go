@@ -27,13 +27,13 @@ type Config struct {
 }
 
 // PrintMode is a type to ensure SetPrintMode recieves a valid enum
-type PrintMode int
+type PrintMode string
 
 // PrintMode constants enum
 const (
-	PrintJSON   PrintMode = 0
-	PrintLine   PrintMode = 1
-	PrintPretty PrintMode = 2
+	PrintJSON   PrintMode = "json"
+	PrintLine   PrintMode = "line"
+	PrintPretty PrintMode = "pretty"
 )
 
 var config Config
@@ -75,18 +75,20 @@ func init() {
 		fmt.Printf("Debug mode on\n")
 	}
 
-	// Verify loaded aliases
+	// Validate/filter loaded aliases
+	validAliases := []Alias{}
 	for _, alias := range config.Aliases {
-		if len(strings.Split(name, " ")) > 1 {
-			return fmt.Errorf("Aliases must not contain spaces")
+		if len(strings.Split(alias.Name, " ")) > 1 {
+			fmt.Printf("Aliases error: Name '%s' must not contain spaces\n", alias.Name)
+			continue
 		}
 		if AliasIsCyclic(alias) {
-			// TODO
+			fmt.Printf("Alias error: '%s' creates an infinite loop\n", alias.Name)
+			continue
 		}
+		validAliases = append(validAliases, alias)
 	}
-	// TODO on alias load and parse, assert that no cyclical aliases
-	// TODO ensure aliases have no spaces in the command name
-
+	config.Aliases = validAliases
 }
 
 // GetConfig returns a copy of the current state struct
