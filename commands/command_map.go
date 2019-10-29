@@ -23,17 +23,18 @@ var errRuntimeError error
 
 func init() {
 	CommandMap = map[string]GoQueryCommand{
+		".alias":      GoQueryCommand{alias, aliasHelp, aliasSuggest},
 		".connect":    GoQueryCommand{connect, connectHelp, connectSuggest},
-		".disconnect": GoQueryCommand{disconnect, disconnectHelp, disconnectSuggest},
-		".query":      GoQueryCommand{query, queryHelp, querySuggest},
-		".schedule":   GoQueryCommand{schedule, scheduleHelp, scheduleSuggest},
-		".resume":     GoQueryCommand{resume, resumeHelp, resumeSuggest},
-		".hosts":      GoQueryCommand{printHosts, printHostsHelp, printHostsSuggest},
-		".history":    GoQueryCommand{history, historyHelp, historySuggest},
 		".clear":      GoQueryCommand{clear, clearHelp, clearSuggest},
-		".mode":       GoQueryCommand{changeMode, changeModeHelp, changeModeSuggest},
+		".disconnect": GoQueryCommand{disconnect, disconnectHelp, disconnectSuggest},
 		".exit":       GoQueryCommand{exit, exitHelp, exitSuggest},
 		".help":       GoQueryCommand{help, helpHelp, helpSuggest},
+		".history":    GoQueryCommand{history, historyHelp, historySuggest},
+		".hosts":      GoQueryCommand{printHosts, printHostsHelp, printHostsSuggest},
+		".mode":       GoQueryCommand{changeMode, changeModeHelp, changeModeSuggest},
+		".query":      GoQueryCommand{query, queryHelp, querySuggest},
+		".resume":     GoQueryCommand{resume, resumeHelp, resumeSuggest},
+		".schedule":   GoQueryCommand{schedule, scheduleHelp, scheduleSuggest},
 		"ls":          GoQueryCommand{listDirectory, listDirectoryHelp, listDirectorySuggest},
 		"cd":          GoQueryCommand{changeDirectory, changeDirectoryHelp, changeDirectorySuggest},
 	}

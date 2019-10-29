@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/config"
+
 	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/hosts"
 	"github.com/AbGuthrie/goquery/utils"
@@ -42,18 +44,48 @@ func refreshLivePrefix() (string, bool) {
 }
 
 func executor(input string) {
-	args := strings.Split(input, " ") // Separate command and arguments
+	writeHistory := true
+	defer func() {
+		if !writeHistory {
+			return
+		}
+		// Write history entry
+		if err := utils.UpdateHistoryFile(input); err != nil {
+			fmt.Printf("Failed to write history file: %s\n", err)
+		}
+	}()
+
+	// Separate command and arguments
+	input = strings.TrimSpace(input)
+	args := strings.Split(input, " ")
+	if len(args) == 0 {
+		return
+	}
+
+	// Lookup and run command in command map
 	if command, ok := commands.CommandMap[args[0]]; ok {
 		err := command.Execute(input)
 		if err != nil {
-			fmt.Printf("%s: %s!\n", args[0], err.Error())
+			fmt.Printf("%s: %s\n", args[0], err.Error())
 		}
-	} else {
+		return
+	}
+
+	// Command not found, was this command aliased?
+	alias, found := config.GetConfig().Aliases[args[0]]
+	if !found {
 		fmt.Printf("No such command: %s\n", args[0])
+		return
 	}
-	if err := utils.UpdateHistoryFile(input); err != nil {
-		fmt.Printf("%s\n", err)
+	realizedCommand, err := utils.InterpolateArguments(input, alias.Command)
+	if err != nil {
+		fmt.Printf("Alias error: %s\n", err)
+		return
 	}
+
+	// Run the parsed and interpolated alias through executor again
+	writeHistory = false
+	executor(realizedCommand)
 }
 
 func completer(in prompt.Document) []prompt.Suggest {
@@ -69,8 +101,8 @@ func completer(in prompt.Document) []prompt.Suggest {
 		// We also need to sort the command because go traverses maps non
 		// deterministically
 		commandNames := make([]string, 0)
-		for k, _ := range commands.CommandMap {
-			commandNames = append(commandNames, k)
+		for name := range commands.CommandMap {
+			commandNames = append(commandNames, name)
 		}
 		sort.Strings(commandNames)
 		for _, commandName := range commandNames {

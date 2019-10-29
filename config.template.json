@@ -1,0 +1,16 @@
+{
+    "debugEnabled": true,
+    "experimental": false,
+    "printMode": "pretty",
+    "aliases": {
+        ".quit": {
+            "command": ".exit"
+        },
+        ".all": {
+            "command": ".query select * from $#"
+        },
+        ".si": {
+            "command": ".all system_info"
+        }
+    }
+}
