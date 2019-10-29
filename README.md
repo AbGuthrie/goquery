@@ -42,8 +42,9 @@ This will either wait for a query to complete or fetch the results and display t
 Run a query asyncronously on the remote host. The query will be tracked in the session for that host so results can be fetched at any point in time, but this allows the investigator to kick off a bunch of things without waiting for each one to complete first.
 
 ### .alias \<aliasName\> \<command\> \<interpolated args\>
-List current aliases when called with no arguments. Alternatively creates a new alias when called with arguments. The format for creating an alias is as follows: `ALIAS_NAME command_string` Positional arguments with $# placeholders are interpolated when the
-command is run, for example the following alias `.all` with command `.query select * from $#` will evaluate to `.query select * from processes` when called with `.all processes`.
+List current aliases when called with no arguments or flags. To create a new alias, call with `--add` flag and provide arguments as follows:  `.alais --add ALIAS_NAME command_string`
+
+Positional arguments with $# placeholders are interpolated when the command is run, for example the following alias `.all` with command `.query select * from $#` will evaluate to `.query select * from processes` when called with `.all processes`.
 
 Command name must not contain any spaces in order to preserve the space delimmitted arguments
 

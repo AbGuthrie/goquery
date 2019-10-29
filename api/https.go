@@ -33,9 +33,15 @@ func init() {
 	ctrlcChannel = make(chan os.Signal, 1)
 	signal.Notify(ctrlcChannel, os.Interrupt)
 	cookieJar, _ = cookiejar.New(nil)
+
+	debugEnabled := config.GetDebug()
+	if debugEnabled {
+		fmt.Println("Warning: Debug is enabled, setting InsecureSkipVerify: True for auth request client!")
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: config.GetConfig().DebugEnabled,
+			InsecureSkipVerify: debugEnabled,
 		},
 	}
 	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}

@@ -25,33 +25,41 @@ func alias(cmdline string) error {
 		return nil
 	}
 
-	// If remove argument provided, try remove alias from config
-	if args[1] == "--remove" {
-		if len(args) == 2 {
-			return fmt.Errorf("--remove flag requires an alias name argument")
+	// If '--add' argument provided, try remove alias from config
+	if args[1] == "--add" {
+		if len(args) < 4 {
+			return fmt.Errorf("--add flag requires an alias arguments: ALIAS_NAME ALIAS_COMMAND")
 		}
-		if err := config.RemoveAlias(args[2]); err != nil {
-			return err
+		args = args[2:]
+		name := args[0]
+		command := ""
+		if len(args) > 1 {
+			command = args[1]
 		}
-		fmt.Printf("Successfully removed alias\n")
+
+		// Create the command and store in state
+		err := config.AddAlias(name, command)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("Error creating alias: %s\n", err))
+		}
+
+		fmt.Printf("Created new alias '%s' with command: %s\n", name, command)
 		return nil
 	}
 
-	// Otherwise create a new alias
-	args = args[1:]
-	name := args[0]
-	command := ""
-	if len(args) > 1 {
-		command = args[1]
+	// Handled --add by now, is input any other than '--remove' ?
+	if args[1] != "--remove" {
+		return fmt.Errorf(".alias must be called with either '--add' or '--remove' flags")
+	}
+	if len(args) == 2 {
+		return fmt.Errorf("--remove flag requires an alias name argument")
 	}
 
-	// Create the command and store in state
-	err := config.AddAlias(name, command)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Error creating alias: %s\n", err))
+	// Argument provided, try remove alias from config
+	if err := config.RemoveAlias(args[2]); err != nil {
+		return err
 	}
-
-	fmt.Printf("Created new alias '%s' with command: %s\n", name, command)
+	fmt.Printf("Successfully removed alias\n")
 	return nil
 }
 
@@ -62,45 +70,13 @@ func aliasHelp() string {
 }
 
 func aliasSuggest(cmdline string) []prompt.Suggest {
-	return []prompt.Suggest{}
-}
-
-// FindAlias searches the list of named aliases and returns the Alias struct if found
-func FindAlias(command string) (config.Alias, bool) {
-	aliases := config.GetConfig().Aliases
-	for _, alias := range aliases {
-		if command == alias.Name {
-			return alias, true
+	// If just at .alias, suggest the flags
+	args := strings.Split(cmdline, " ")
+	if len(args) == 2 && args[1] == "" {
+		return []prompt.Suggest{
+			prompt.Suggest{Text: "--add", Description: "Use this flag to create a new alias"},
+			prompt.Suggest{Text: "--remove", Description: "Use this flag to remove an alias by name"},
 		}
 	}
-	return config.Alias{}, false
-}
-
-// InterpolateArguments fills in an alias' placeholders ($#) with provided arguments
-// TODO add alias_test.go unit tests
-func InterpolateArguments(rawLine string, command string) (string, error) {
-	inputParts := strings.Split(rawLine, " ")
-	args := inputParts[1:]
-
-	// TODO this should support escaping and ignoring the
-	// placeholder pattern ie \$#
-	placeholderParts := strings.Split(command, "$#")
-
-	// Assert arguments provided and placeholders align
-	if len(args) != len(placeholderParts)-1 {
-		return "", fmt.Errorf("Argument mismatch, alias expects %d args", len(placeholderParts)-1)
-	}
-
-	// If no placeholders in query, return as is
-	if len(placeholderParts)-1 == 0 {
-		return command, nil
-	}
-
-	realizedCommand := ""
-	for i, arg := range args {
-		realizedCommand += placeholderParts[i]
-		realizedCommand += arg
-	}
-
-	return realizedCommand, nil
+	return []prompt.Suggest{}
 }

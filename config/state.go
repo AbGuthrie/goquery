@@ -14,16 +14,16 @@ import (
 
 // Alias is the struct used to allow abstracted commands
 type Alias struct {
-	Name    string `json:"name"`
+	Name    string
 	Command string `json:"command"`
 }
 
 // Config is the struct containing the application state
 type Config struct {
-	CurrentPrintMode PrintMode `json:"printMode"`
-	DebugEnabled     bool      `json:"debugEnabled"`
-	Aliases          []Alias   `json:"aliases"`
-	Experimental     bool      `json:"experimental"`
+	CurrentPrintMode PrintMode        `json:"printMode"`
+	DebugEnabled     bool             `json:"debugEnabled"`
+	Aliases          map[string]Alias `json:"aliases"`
+	Experimental     bool             `json:"experimental"`
 }
 
 // PrintMode is a type to ensure SetPrintMode recieves a valid enum
@@ -48,7 +48,7 @@ func init() {
 	if configPath == "" {
 		usr, err := user.Current()
 		if err != nil {
-			panic(fmt.Sprintf("Failed to fetch user info for home directory: %s", err))
+			fmt.Printf("Failed to fetch user info for home directory: %s\n", err)
 		}
 		goQueryPath := path.Join(usr.HomeDir, ".goquery")
 		configPath = path.Join(goQueryPath, "config.json")
@@ -63,38 +63,35 @@ func init() {
 	// Otherwise go ahead and load + decode config json
 	configBytes, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to read config file: %s", err))
+		fmt.Printf("Unable to read config file: %s at path %s\n", err, configPath)
 	}
 	decoded := &Config{}
 	if err := json.Unmarshal(configBytes, &decoded); err != nil {
-		panic(fmt.Sprintf("Unable to parse config file: %s", err))
+		fmt.Printf("Unable to parse config file: %s at path %s\n", err, configPath)
 	}
 
 	config = *decoded
 
 	// Validate/filter loaded aliases
-	validAliases := []Alias{}
-	for _, alias := range config.Aliases {
-		if len(strings.Split(alias.Name, " ")) > 1 {
-			fmt.Printf("Aliases error: Name '%s' must not contain spaces\n", alias.Name)
+	validAliases := map[string]Alias{}
+	for aliasName, alias := range config.Aliases {
+		if len(strings.Fields(aliasName)) > 1 {
+			fmt.Printf("Aliases error: Name '%s' must not contain whitespace\n", aliasName)
 			continue
-		}
-		for _, existing := range validAliases {
-			if alias.Name == existing.Name {
-				fmt.Printf("Aliases name '%s' is a duplicate of an existing alias\n", alias.Name)
-				continue
-			}
 		}
 		if AliasIsCyclic(alias) {
-			fmt.Printf("Alias error: '%s' creates an infinite loop\n", alias.Name)
+			fmt.Printf("Alias error: '%s' creates an infinite loop\n", aliasName)
 			continue
 		}
-		validAliases = append(validAliases, alias)
+		validAliases[aliasName] = Alias{
+			Name:    aliasName,
+			Command: alias.Command,
+		}
 	}
 	config.Aliases = validAliases
 
 	if config.DebugEnabled {
-		fmt.Printf("Debug mode on\n")
+		fmt.Println("Debug mode on")
 		fmt.Printf("Initialized with print mode '%s'\n", config.CurrentPrintMode)
 		fmt.Printf("Loaded %d aliase(s)\n", len(config.Aliases))
 		fmt.Println("")
@@ -112,7 +109,7 @@ func SetDebug(enabled bool) {
 }
 
 func GetDebug() bool {
-	return config.Debug
+	return config.DebugEnabled
 }
 
 func SetExperimental(enabled bool) {
@@ -128,6 +125,7 @@ func SetPrintMode(printMode PrintMode) {
 	config.CurrentPrintMode = printMode
 }
 
+// TODO recieve args as map via use a command line parsing library called in from main
 func parseConfigPath(args []string) (string, error) {
 	if len(args) == 1 {
 		return "", nil
@@ -135,8 +133,6 @@ func parseConfigPath(args []string) (string, error) {
 	// Drop leading `main.go`
 	args = args[1:]
 
-	// Currently this is the only command line argument, so it
-	// doesn't need to be as robust
 	if len(args) < 2 {
 		return "", fmt.Errorf("Invalid arguments provided, expecting --config 'path'")
 	}
@@ -152,14 +148,12 @@ func parseConfigPath(args []string) (string, error) {
 
 // AddAlias adds registers a new alias in the config
 func AddAlias(name, command string) error {
-	if len(strings.Split(name, " ")) > 1 {
-		return fmt.Errorf("Aliases must not contain spaces")
+	if len(strings.Fields(name)) > 1 {
+		return fmt.Errorf("Alias name must not contain any whitespace")
 	}
 	// Ensure not conflicting names
-	for _, alias := range config.Aliases {
-		if alias.Name == name {
-			return fmt.Errorf("Aliases name '%s' is a duplicate of an existing alias", name)
-		}
+	if _, exists := config.Aliases[name]; exists {
+		return fmt.Errorf("Aliases name '%s' is a duplicate of an existing alias", name)
 	}
 	newAlias := Alias{
 		Name:    name,
@@ -169,36 +163,29 @@ func AddAlias(name, command string) error {
 	if AliasIsCyclic(newAlias) {
 		return fmt.Errorf("Alias creates an infinite loop")
 	}
-	config.Aliases = append(config.Aliases, newAlias)
+	config.Aliases[name] = newAlias
 	return nil
 }
 
 // RemoveAlias an alias in the config
 func RemoveAlias(name string) error {
-	index := -1
-	for i, alias := range config.Aliases {
-		if name == alias.Name {
-			index = i
-			break
-		}
-	}
-	if index == -1 {
+	if _, exists := config.Aliases[name]; !exists {
 		return fmt.Errorf("Alias '%s' not found", name)
 	}
-	config.Aliases = append(config.Aliases[:index], config.Aliases[index+1:]...)
+	delete(config.Aliases, name)
 	return nil
 }
 
 // AliasIsCyclic is a check to ensure that the aliases do not form an infinite loop
 func AliasIsCyclic(alias Alias) bool {
 	graph := make(map[string]string)
-	aliases := config.Aliases
-	aliases = append(config.Aliases, alias)
+	graph[alias.Name] = strings.Split(alias.Command, " ")[0]
 
-	for _, alias := range aliases {
+	for _, alias := range config.Aliases {
 		next := strings.Split(alias.Command, " ")[0]
 		graph[alias.Name] = next
 	}
+
 	return isCyclic(alias.Name, []string{}, graph)
 }
 

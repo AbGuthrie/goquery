@@ -2,18 +2,15 @@
     "debugEnabled": true,
     "experimental": false,
     "printMode": "pretty",
-    "aliases": [
-        {
-            "name": ".quit",
+    "aliases": {
+        ".quit": {
             "command": ".exit"
         },
-        {
-            "name": ".all",
+        ".all": {
             "command": ".query select * from $#"
         },
-        {
-            "name": ".recurse",
-            "command": ".all $#"
+        ".si": {
+            "command": ".all system_info"
         }
-    ]
+    }
 }

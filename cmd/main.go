@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/config"
+
 	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/hosts"
 	"github.com/AbGuthrie/goquery/utils"
@@ -70,12 +72,12 @@ func executor(input string) {
 	}
 
 	// Command not found, was this command aliased?
-	alias, found := commands.FindAlias(args[0])
+	alias, found := config.GetConfig().Aliases[args[0]]
 	if !found {
 		fmt.Printf("No such command: %s\n", args[0])
 		return
 	}
-	realizedCommand, err := commands.InterpolateArguments(input, alias.Command)
+	realizedCommand, err := utils.InterpolateArguments(input, alias.Command)
 	if err != nil {
 		fmt.Printf("Alias error: %s\n", err)
 		return
@@ -99,8 +101,8 @@ func completer(in prompt.Document) []prompt.Suggest {
 		// We also need to sort the command because go traverses maps non
 		// deterministically
 		commandNames := make([]string, 0)
-		for k := range commands.CommandMap {
-			commandNames = append(commandNames, k)
+		for name := range commands.CommandMap {
+			commandNames = append(commandNames, name)
 		}
 		sort.Strings(commandNames)
 		for _, commandName := range commandNames {
