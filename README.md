@@ -4,9 +4,9 @@ goquery is a remote investigation client that uses your existing osquery deploym
 
 Using osquery's distributed API, hosts can be targeted for single queries to pull back specific information without having to modify the osquery schedule. goquery uses this API and abstracts it into a shell like experience that investigators are more used to while retaining all the power of osquery tables, extensions, and features like Auto Table Construction.
 
-With goquery you can connect to hosts via UUID, and remotely interact with the host's osquery instance in an interactive session. This works  over osquery's asynchronous distributed API. The concept of node keys, discovery queries, and the osquery schedule is abstracted away (or not used) to provide a clean, efficient way to remotely interrogate hosts for abuse, compromise investigation, or fleet management.
+With goquery you can connect to hosts via UUID, and remotely interact with a host's osquery instance in an interactive session. This works over osquery's asynchronous distributed API. The concept of node keys, discovery queries, and the osquery schedule is abstracted away (or not used) to provide a clean, efficient way to remotely interrogate hosts for abuse, compromise investigation, or fleet management.
 
-To get up and running, view the <a href="#running-goquery">building and running section</a>
+To get up and running, view the [building and running section](#running-goquery)
 
 ### Features:
 
@@ -59,7 +59,7 @@ This will either wait for a query to complete or fetch the results and display t
 Run a query asyncronously on the remote host. The query will be tracked in the session for that host so results can be fetched at any point in time, but this allows the investigator to kick off a bunch of things without waiting for each one to complete first.
 
 ### .alias \<alias_name\> \<command\> \<interpolated_args\>
-List current aliases when called with no arguments or flags. To create a new alias, call with `--add` flag and provide arguments as follows:  `.alais --add ALIAS_NAME command_string`
+List current aliases when called with no arguments or flags. To create a new alias, call with `--add` flag and provide arguments as follows: `.alais --add ALIAS_NAME command_string`
 
 Positional arguments with $# placeholders are interpolated when the command is run, for example the following alias `.all` with command `.query select * from $#` will evaluate to `.query select * from processes` when called with `.all processes`.
 
