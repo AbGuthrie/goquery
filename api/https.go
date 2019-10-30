@@ -47,7 +47,7 @@ func init() {
 	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
 	err := Authenticate()
 	if err != nil {
-		fmt.Printf("Could not authenticate with the backend\n")
+		fmt.Printf("Could not authenticate with the backend: %s\n", err)
 	}
 }
 
