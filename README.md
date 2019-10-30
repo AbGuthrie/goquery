@@ -50,20 +50,20 @@ Show all hosts you are connected to with their osquery version, hostname, UUID, 
 Change the printing mode. goquery supports multiple printing modes to help you make sense of data at a glance. We currently support: Line, JSON, and Pretty (default).
 
 ### .query \<query\>
-Like .schedule and .resume together. Runs a query on a remote host and waits for the result before returning control to the REPL.
+Runs a query on a remote host and waits for the result before returning control to the REPL. Equivalent to running .schedule and .resume together.
 
 ### .resume \<query_name\>
 This will either wait for a query to complete or fetch the results and display them if the query has already posted results. This is used in conjunction with .schedule to pull the results of queries that are running asynchronously. This can also be used to display the results of any previously run query.
 
 ### .schedule \<query\>
-Run a query asyncronously on the remote host. The query will be tracked in the session for that host so results can be fetched at any point in time, but this allows the investigator to kick off a bunch of things without waiting for each one to complete first.
+Run a query asynchronously on the remote host. The query will be tracked in the session for that host so results can be fetched at any point in time, but this allows the investigator to kick off a bunch of things without waiting for each one to complete first.
 
 ### .alias \<alias_name\> \<command\> \<interpolated_args\>
-List current aliases when called with no arguments or flags. To create a new alias, call with `--add` flag and provide arguments as follows: `.alais --add ALIAS_NAME command_string`
+List current aliases when called with no arguments or flags. To create a new alias, call with `--add` flag and provide arguments as follows: `.alias --add ALIAS_NAME command_string`
 
 Positional arguments with $# placeholders are interpolated when the command is run, for example the following alias `.all` with command `.query select * from $#` will evaluate to `.query select * from processes` when called with `.all processes`.
 
-Command name must not contain any spaces in order to preserve the space delimmitted arguments
+Command name must not contain any spaces in order to preserve the space delimited arguments
 
 To remove an alias, use `.alias --remove ALIAS_NAME`
 
@@ -75,11 +75,11 @@ List the files in the current directory. The current directory is set by using t
 
 # Integration
 
-To support the various features of goquery, your backend will need to support various APIs used to interact with your fleet. Not all APIs are needed but there are no redundent APIs (goquery can work without all APIs but will have its functionality diminished).
+To support the various features of goquery, your backend will need to support various APIs used to interact with your fleet. Not all APIs are needed but there are no redundant APIs (goquery can work without all APIs but will have its functionality diminished).
 
 ### Core API
 
-The following endpoints are required to enable goquery to talk to a host's osquery instance. See `goserver/mock_osquery_server.go` for an example inmplementation.
+The following endpoints are required to enable goquery to talk to a host's osquery instance. See `goserver/mock_osquery_server.go` for an example implementation.
 
 #### checkHost
 Verify a host exists in the fleet.
