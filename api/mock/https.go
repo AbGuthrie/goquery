@@ -1,4 +1,4 @@
-package api
+package mock
 
 import (
 	"bufio"
@@ -10,7 +10,6 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
-	"os/signal"
 	"strings"
 	"syscall"
 	"time"
@@ -22,7 +21,6 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var ctrlcChannel (chan os.Signal)
 var token string
 var cookieJar *cookiejar.Jar
 var client *http.Client
@@ -30,8 +28,6 @@ var authed bool
 
 func init() {
 	authed = false
-	ctrlcChannel = make(chan os.Signal, 1)
-	signal.Notify(ctrlcChannel, os.Interrupt)
 	cookieJar, _ = cookiejar.New(nil)
 
 	debugEnabled := config.GetDebug()
@@ -45,10 +41,10 @@ func init() {
 		},
 	}
 	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
-	err := Authenticate()
-	if err != nil {
-		fmt.Printf("Could not authenticate with the backend: %s\n", err)
-	}
+	//err := authenticate()
+	//if err != nil {
+	//	fmt.Printf("Could not authenticate with the backend: %s\n", err)
+	//}
 }
 
 func credentials() (string, string) {
@@ -101,7 +97,7 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	return ssoResponse, relayState, nil
 }
 
-func Authenticate() error {
+func authenticate() error {
 	response, err := client.Get("https://localhost:8001/checkHost")
 
 	if err != nil {
@@ -140,7 +136,7 @@ func Authenticate() error {
 
 func CheckHost(uuid string) (hosts.Host, error) {
 	if !authed {
-		err := Authenticate()
+		err := authenticate()
 		if err != nil {
 			return hosts.Host{}, err
 		}
@@ -190,7 +186,7 @@ func CheckHost(uuid string) (hosts.Host, error) {
 
 func ScheduleQuery(uuid string, query string) (string, error) {
 	if !authed {
-		err := Authenticate()
+		err := authenticate()
 		if err != nil {
 			return "", err
 		}
@@ -205,7 +201,7 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 			"query": {query}},
 	)
 	if err != nil {
-		Authenticate()
+		authenticate()
 		return "", fmt.Errorf("ScheduleQuery call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -229,34 +225,6 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	return qsResponse.QueryName, nil
 }
 
-func ScheduleQueryAndWait(uuid string, query string) ([]map[string]string, error) {
-	queryName, err := ScheduleQuery(uuid, query)
-	var results = make([]map[string]string, 0)
-	if err != nil {
-		return results, fmt.Errorf("ScheduleQueryAndWait call failed: %s", err)
-	}
-
-	// Wait while the query is pending
-	var status string
-	for {
-		results, status, err = FetchResults(queryName)
-		if err != nil || status != "Pending" {
-			break
-		}
-		time.Sleep(time.Second)
-		fmt.Printf(".")
-		select {
-		case <-ctrlcChannel:
-			return results, fmt.Errorf("Waiting Cancelled")
-		default:
-		}
-	}
-
-	fmt.Printf("\n")
-	// No need to check error here because return is the same
-	return results, err
-}
-
 func FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"results"`
@@ -265,7 +233,7 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 	resultsResponse := ResultsResponse{}
 
 	if !authed {
-		err := Authenticate()
+		err := authenticate()
 		if err != nil {
 			return resultsResponse.Rows, "", err
 		}
@@ -277,7 +245,7 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 	)
 
 	if err != nil {
-		Authenticate()
+		authenticate()
 		return resultsResponse.Rows, "", fmt.Errorf("FetchResults call failed: %s", err)
 	}
 	if response.StatusCode == 404 {

@@ -24,6 +24,7 @@ type Config struct {
 	DebugEnabled     bool             `json:"debugEnabled"`
 	Aliases          map[string]Alias `json:"aliases"`
 	Experimental     bool             `json:"experimental"`
+	Api              string           `json:"api"`
 }
 
 // PrintMode is a type to ensure SetPrintMode recieves a valid enum
@@ -57,6 +58,7 @@ func init() {
 	// If no config file exists, use defaults
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		SetPrintMode(PrintPretty)
+		config.Api = "mock"
 		return
 	}
 
@@ -118,6 +120,10 @@ func SetExperimental(enabled bool) {
 
 func GetExperimental() bool {
 	return config.Experimental
+}
+
+func GetApi() string {
+	return config.Api
 }
 
 // SetPrintMode assigns .CurrentPrintMode on the current config struct
