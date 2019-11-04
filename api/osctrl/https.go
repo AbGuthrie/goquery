@@ -69,7 +69,7 @@ func Initialize() (models.GoQueryAPI, error) {
 	}
 	instance.Client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: instance.CookieJar}
 
-	return instance, nil
+	return &instance, nil
 }
 
 func credentials() (string, string) {
@@ -85,7 +85,7 @@ func credentials() (string, string) {
 	return strings.TrimSpace(username), password
 }
 
-func (instance osctrlAPI) authenticate() error {
+func (instance *osctrlAPI) authenticate() error {
 	response, err := instance.Client.Get(instance.AdminBase)
 
 	if err != nil {
@@ -133,7 +133,7 @@ func (instance osctrlAPI) authenticate() error {
 	return nil
 }
 
-func (instance osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
+func (instance *osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
@@ -189,7 +189,7 @@ func (instance osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
 	}, nil
 }
 
-func (instance osctrlAPI) ScheduleQuery(uuid string, query string) (string, error) {
+func (instance *osctrlAPI) ScheduleQuery(uuid string, query string) (string, error) {
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
@@ -236,7 +236,7 @@ func (instance osctrlAPI) ScheduleQuery(uuid string, query string) (string, erro
 	return qsResponse.QueryName, nil
 }
 
-func (instance osctrlAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
+func (instance *osctrlAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"results"`
 		Status string              `json:"status"`
