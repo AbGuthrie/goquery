@@ -108,7 +108,7 @@ Deploy it locally with `make deploy` (which uses docker swarm) and then you're r
 
 ### Running goquery
 
-Use `go run cmd/main.go` to simply run from the root of the directory, or build a binary if you wish with `go build -o goquery ./cmd/main.go `
+Use `go run cmd/main.go --config ./config.template.json` to simply run from the root of the directory, or build a binary if you wish with `go build -o goquery ./cmd/main.go `
 
 For a quick demo, try the following commands:
 

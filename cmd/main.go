@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/config"
 
 	"github.com/AbGuthrie/goquery/commands"
@@ -18,7 +19,12 @@ import (
 func main() {
 	history, err := utils.LoadHistoryFile()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("Unable to load history file %s\n", err)
+	}
+
+	// Initialize API integration
+	if err := api.InitializeAPI(config.GetAPIDriver()); err != nil {
+		log.Fatalf("Failed to initialize API driver: %s", err)
 	}
 
 	p := prompt.New(

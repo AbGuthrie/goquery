@@ -13,8 +13,6 @@ import (
 
 var verificationTemplate = "select * from file where path = '%s' and type = 'directory'"
 
-// TODO cd needs to support quoting so you can CD into folders with spaces
-
 func changeDirectory(cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {

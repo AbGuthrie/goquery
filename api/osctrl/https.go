@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/config"
 
 	"github.com/AbGuthrie/goquery/hosts"
@@ -22,30 +23,40 @@ import (
 )
 
 // The token type returned by osctrl admin
-type TokenResponse struct {
+type tokenResponse struct {
 	Token      string `json:"token"`
 	Expiration string `json:"expiration"`
 }
 
-var token TokenResponse
-var cookieJar *cookiejar.Jar
-var client *http.Client
-var authed bool
+type osctrlAPI struct {
+	Token     tokenResponse
+	CookieJar *cookiejar.Jar
+	Client    *http.Client
+	Authed    bool
 
-var protocol string
-var server string
-var adminBase string
-var apiBase string
+	Protocol  string
+	Server    string
+	AdminBase string
+	APIBase   string
+}
 
-func init() {
-	authed = false
-	protocol = "https"
+var instance osctrlAPI
+
+// Initialize creates and returns an api implementation that implements the models.GoQueryAPI interface
+// can easily be parameterized with flags passed from main via the config.json
+func Initialize() (models.GoQueryAPI, error) {
 	adminServer := "osctrl-admin.domain.tld"
-	adminBase = fmt.Sprintf("%s://%s", protocol, adminServer)
+	protocol := "https"
 	apiServer := "osctrl-api.domain.tld"
-	apiBase = fmt.Sprintf("%s://%s", protocol, apiServer)
 
-	cookieJar, _ = cookiejar.New(nil)
+	instance = osctrlAPI{
+		Authed:    false,
+		Protocol:  protocol,
+		AdminBase: fmt.Sprintf("%s://%s", protocol, adminServer),
+		APIBase:   fmt.Sprintf("%s://%s", protocol, apiServer),
+	}
+
+	instance.CookieJar, _ = cookiejar.New(nil)
 	debugEnabled := config.GetDebug()
 	if debugEnabled {
 		fmt.Println("Warning: Debug is enabled, setting InsecureSkipVerify: True for auth request client!")
@@ -56,7 +67,9 @@ func init() {
 			InsecureSkipVerify: debugEnabled,
 		},
 	}
-	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
+	instance.Client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: instance.CookieJar}
+
+	return instance, nil
 }
 
 func credentials() (string, string) {
@@ -72,8 +85,8 @@ func credentials() (string, string) {
 	return strings.TrimSpace(username), password
 }
 
-func Authenticate() error {
-	response, err := client.Get(adminBase)
+func (instance osctrlAPI) authenticate() error {
+	response, err := instance.Client.Get(instance.AdminBase)
 
 	if err != nil {
 		return fmt.Errorf("Couldn't find osctrl-amdin service: %s", err)
@@ -84,7 +97,7 @@ func Authenticate() error {
 	fmt.Println("Login Complete")
 	fmt.Println("Getting osctrl Token")
 
-	response, err = client.Get(fmt.Sprintf("%s/tokens/%s", adminBase, username))
+	response, err = instance.Client.Get(fmt.Sprintf("%s/tokens/%s", instance.AdminBase, username))
 	if err != nil {
 		return fmt.Errorf("Auth call failed: %s", err)
 	}
@@ -104,25 +117,25 @@ func Authenticate() error {
 		return fmt.Errorf("Could not read token response")
 	}
 
-	err = json.Unmarshal(bodyBytes, &token)
+	err = json.Unmarshal(bodyBytes, &instance.Token)
 
 	if err != nil {
 		return err
 	}
 
-	if token.Token == "" {
+	if instance.Token.Token == "" {
 		return fmt.Errorf("Token returned was empty")
 	}
 
 	fmt.Println("Gathered Token Successfully")
-	fmt.Printf("%s\n", token.Token)
-	authed = true
+	fmt.Printf("%s\n", instance.Token.Token)
+	instance.Authed = true
 	return nil
 }
 
-func CheckHost(uuid string) (hosts.Host, error) {
-	if !authed {
-		err := Authenticate()
+func (instance osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
+	if !instance.Authed {
+		err := instance.authenticate()
 		if err != nil {
 			return hosts.Host{}, err
 		}
@@ -136,9 +149,9 @@ func CheckHost(uuid string) (hosts.Host, error) {
 		Version        string `json:"OsqueryVersion"`
 	}
 
-	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/nodes/%s", apiBase, uuid), nil)
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.Token))
-	response, err := client.Do(request)
+	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/nodes/%s", instance.APIBase, uuid), nil)
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
+	response, err := instance.Client.Do(request)
 
 	if err != nil {
 		// Possible Authentication Failure
@@ -176,9 +189,9 @@ func CheckHost(uuid string) (hosts.Host, error) {
 	}, nil
 }
 
-func ScheduleQuery(uuid string, query string) (string, error) {
-	if !authed {
-		err := Authenticate()
+func (instance osctrlAPI) ScheduleQuery(uuid string, query string) (string, error) {
+	if !instance.Authed {
+		err := instance.authenticate()
 		if err != nil {
 			return "", err
 		}
@@ -194,12 +207,12 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	queryRequest := DistributedQueryRequest{UUIDs: []string{uuid}, Query: query}
 	qrJSON, _ := json.Marshal(queryRequest)
 
-	request, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/v1/queries", apiBase), bytes.NewReader(qrJSON))
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.Token))
-	response, err := client.Do(request)
+	request, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/v1/queries", instance.APIBase), bytes.NewReader(qrJSON))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
+	response, err := instance.Client.Do(request)
 
 	if err != nil {
-		Authenticate()
+		instance.authenticate()
 		return "", fmt.Errorf("ScheduleQuery call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -216,33 +229,33 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	qsResponse := QueryScheduleResponse{}
 	err = json.Unmarshal(bodyBytes, &qsResponse)
 	if err != nil {
-		authed = false
+		instance.Authed = false
 		return "", err
 	}
 	hosts.AddQueryToHost(uuid, hosts.Query{Name: qsResponse.QueryName, SQL: query})
 	return qsResponse.QueryName, nil
 }
 
-func FetchResults(queryName string) ([]map[string]string, string, error) {
+func (instance osctrlAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"results"`
 		Status string              `json:"status"`
 	}
 	resultsResponse := ResultsResponse{}
 
-	if !authed {
-		err := Authenticate()
+	if !instance.Authed {
+		err := instance.authenticate()
 		if err != nil {
 			return resultsResponse.Rows, "", err
 		}
 	}
 
-	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/queries/%s", apiBase, queryName), nil)
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.Token))
-	response, err := client.Do(request)
+	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/queries/%s", instance.APIBase, queryName), nil)
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
+	response, err := instance.Client.Do(request)
 
 	if err != nil {
-		Authenticate()
+		instance.authenticate()
 		return resultsResponse.Rows, "", fmt.Errorf("FetchResults call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -258,7 +271,7 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 	}
 
 	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
-		authed = false
+		instance.Authed = false
 		return resultsResponse.Rows, "", err
 	}
 
