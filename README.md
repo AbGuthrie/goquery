@@ -6,6 +6,8 @@ Using osquery's distributed API, hosts can be targeted for single queries to pul
 
 With goquery you can connect to hosts via UUID, and remotely interact with a host's osquery instance in an interactive session. This works over osquery's asynchronous distributed API. The concept of node keys, discovery queries, and the osquery schedule is abstracted away (or not used) to provide a clean, efficient way to remotely interrogate hosts for abuse, compromise investigation, or fleet management.
 
+![goquery](https://user-images.githubusercontent.com/3303787/67834837-a8cbff00-faa5-11e9-8723-7526be0f63a5.png "goquery")
+
 To get up and running, view the [building and running section](#running-goquery)
 
 ### Features:
@@ -14,16 +16,11 @@ To get up and running, view the [building and running section](#running-goquery)
 - [osctrl](https://github.com/jmpsec/osctrl) integration
 - Command aliasing
 - Print modes
-- Query scheduling for long running queries
-
-### Screenshots:
-
-![goquery](https://user-images.githubusercontent.com/3303787/67834837-a8cbff00-faa5-11e9-8723-7526be0f63a5.png "goquery")
-
+- Both interactive and non interactive scheduling modes
 
 # Commands
 
-The following is a list of implemented commands and their calling requirements.
+The following is a list of all goquery commands and their calling requirements.
 
 ### .connect \<UUID\>
 This opens a session with a remote host. It will ask the backend if a host with that UUID is registered and if not return to the user saying it doesn't exist. If the backend returns that the host exists then a session is opened and that machine is set as the active host. All future commands will interact with this host until it's disconnected from or the user changes to another host. Supports suggestions.
@@ -51,6 +48,7 @@ Change the printing mode. goquery supports multiple printing modes to help you m
 
 ### .query \<query\>
 Runs a query on a remote host and waits for the result before returning control to the REPL. Equivalent to running .schedule and .resume together.
+![query_table_suggestion](https://user-images.githubusercontent.com/2386877/67360345-79077f00-f51a-11e9-8d12-c897818f992a.png "Query Table Suggestions")
 
 ### .resume \<query_name\>
 This will either wait for a query to complete or fetch the results and display them if the query has already posted results. This is used in conjunction with .schedule to pull the results of queries that are running asynchronously. This can also be used to display the results of any previously run query.
@@ -75,21 +73,36 @@ List the files in the current directory. The current directory is set by using t
 
 # Integration
 
-To support the various features of goquery, your backend will need to support various APIs used to interact with your fleet. Not all APIs are needed but there are no redundant APIs (goquery can work without all APIs but will have its functionality diminished).
+To support the various features of goquery, your backend will need to support a number of APIs to interact with your fleet. The core APIs are required for basic functionality but future APIs may focus on more fringe features such as ATC, file pulling, etc. goquery can work without these APIs and that functionality will be disabled.
 
-### Core API
+## Core API
 
-The following endpoints are required to enable goquery to talk to a host's osquery instance. See `goserver/mock_osquery_server.go` for an example implementation.
+The following endpoints are required to enable goquery to talk to a host's osquery instance. See `goserver/mock_osquery_server.go` for a reference implementation.
 
-#### checkHost
-Verify a host exists in the fleet.
+### checkHost
+**Description:** Verify a host exists in the fleet.
 
-#### scheduleQuery
-Schedule a query on a remote machine.
+**goquery Provides:** UUID
 
-#### fetchResults
-Pull the results of a query by the name returned from scheduleQuery
+**goquery Expects:** Information on that UUID: if it exists or not, osquery version, hostname, operating system version.
 
+---
+
+### scheduleQuery
+**Description:** Schedule a query on a remote machine.
+
+**goquery Provides:** UUID, query
+
+**goquery Expects:** A unique identifier for that query will be passed to fetchResults for updates on the query.
+
+---
+
+### fetchResults
+**Description:** Pull the results of a query by the name returned from scheduleQuery
+
+**goquery Provides:** queryName
+
+**goquery Expects:** The query results if they are available
 
 ## Config
 
@@ -102,7 +115,7 @@ By default, goquery will check for a config file at the following path: `~/.goqu
 ### Docker Testing Infra
 Hopefully one day goquery will be plug'n'play with the most popular osquery backends, but for now it'll take a little work to integrate. To get up and running playing with goquery as quickly as possible, you can use the docker test infra.
 
-Running `make docker` will build a set of nodes used to create a simulated osquery deployment with two Ubuntu hosts, a central osquery server, along with a SAML IdP. goquery contains its own osquery server written in Go which is designed to be lightweight and easy to understand to help you learn how to integrate goquery into your enterprise.
+Running `make docker` will build a set of nodes used to create a simulated osquery deployment with two Ubuntu hosts, a central osquery server, along with a SAML IdP. goquery's docker infra contains its own osquery server written in Go which is designed to be lightweight and easy to understand to help you learn how to integrate goquery into your enterprise.
 
 Deploy it locally with `make deploy` (which uses docker swarm) and then you're ready to start testing by running goquery.
 
@@ -117,6 +130,13 @@ For a quick demo, try the following commands:
 - `.mode line`
 - `.query select * from system_info`
 
+## Slack
+[![Slack Status](https://osquery-slack.herokuapp.com/badge.svg)](https://osquery-slack.herokuapp.com)
+
+There is a goquery channel in the osquery slack for discussion and help. If you have questions about deployment, integration, or usage, you can ask there.
+
+## Bugs?
+File an issue!
 
 ## License
 
