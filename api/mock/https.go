@@ -14,37 +14,42 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/config"
-
 	"github.com/AbGuthrie/goquery/hosts"
 
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var token string
-var cookieJar *cookiejar.Jar
-var client *http.Client
-var authed bool
+type mockAPI struct {
+	Token     string
+	CookieJar *cookiejar.Jar
+	Client    *http.Client
+	Authed    bool
+}
 
-func init() {
-	authed = false
-	cookieJar, _ = cookiejar.New(nil)
+var instance mockAPI
 
+// Intialize creates and returns an api implementation that implements the models.GoQueryAPI interface
+// can easily be parameterized with flags passed from main via the config.json
+func Intialize() (models.GoQueryAPI, error) {
+	instance = mockAPI{
+		Authed: false,
+	}
+
+	instance.CookieJar, _ = cookiejar.New(nil)
 	debugEnabled := config.GetDebug()
 	if debugEnabled {
 		fmt.Println("Warning: Debug is enabled, setting InsecureSkipVerify: True for auth request client!")
 	}
-
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: debugEnabled,
 		},
 	}
-	client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: cookieJar}
-	//err := authenticate()
-	//if err != nil {
-	//	fmt.Printf("Could not authenticate with the backend: %s\n", err)
-	//}
+	instance.Client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: instance.CookieJar}
+
+	return &instance, nil
 }
 
 func credentials() (string, string) {
@@ -68,6 +73,9 @@ func extractSSORequest(response *http.Response) (string, string) {
 	bodyStr := string(bodyBytes)
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLRequest\"")
+	if loc == -1 {
+		return "", ""
+	}
 	endLoc := strings.Index(bodyStr[loc+26:], "\" ")
 	samlRequest := bodyStr[loc+26 : loc+26+endLoc]
 
@@ -86,6 +94,9 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	if strings.Index(bodyStr, "Invalid username or password") != -1 {
 		return "", "", fmt.Errorf("Credential Failure")
 	}
+	if config.GetDebug() {
+		fmt.Printf("ssoResponse: %s\n", bodyStr)
+	}
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLResponse\"")
 	endLoc := strings.Index(bodyStr[loc+27:], "\" ")
@@ -97,20 +108,28 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	return ssoResponse, relayState, nil
 }
 
-func authenticate() error {
-	response, err := client.Get("https://localhost:8001/checkHost")
-
+func (instance *mockAPI) authenticate() error {
+	response, err := instance.Client.Get("https://localhost:8001/checkHost")
 	if err != nil {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
 
 	fmt.Printf("Authenticating with backend...\n")
 	ssoRequest, relayState := extractSSORequest(response)
+
+	if ssoRequest == "" && relayState == "" {
+		// Looks like the user is already authed, there was no SAML data
+		instance.Authed = true
+		return nil
+	}
+
+	if config.GetDebug() {
+		fmt.Printf("ssoRequest: %s\nrelayState: %s\n", ssoRequest, relayState)
+	}
+
 	username, password := credentials()
 
-	// TODO This should be an HTTPS endpoint and should use the global client
-	var httpClient = &http.Client{Timeout: time.Second * 10, Jar: cookieJar}
-	response, err = httpClient.PostForm("http://localhost:8002/sso",
+	response, err = instance.Client.PostForm("http://localhost:8002/sso",
 		url.Values{"SAMLRequest": {ssoRequest}, "RelayState": {relayState}, "user": {username}, "password": {password}},
 	)
 	if err != nil {
@@ -118,25 +137,34 @@ func authenticate() error {
 	}
 
 	samlResponse, relayState, err := extractSSOResponse(response)
+	if config.GetDebug() {
+		fmt.Printf("ssoResponse: %s\nrelayState: %s\n", samlResponse, relayState)
+	}
+
 	if err != nil {
 		return err
 	}
 
-	response, err = client.PostForm("https://localhost:8001/saml/acs",
+	response, err = instance.Client.PostForm("https://localhost:8001/saml/acs",
 		url.Values{"SAMLResponse": {samlResponse}, "RelayState": {relayState}},
 	)
+
+	if config.GetDebug() {
+		fmt.Printf("samlResponse: %s\nrelayState: %s\n", response, relayState)
+	}
 
 	if err != nil {
 		return fmt.Errorf("Authentication failed: %s", err)
 	}
+
 	fmt.Printf("Authentication Complete\n")
-	authed = true
+	instance.Authed = true
 	return nil
 }
 
-func CheckHost(uuid string) (hosts.Host, error) {
-	if !authed {
-		err := authenticate()
+func (instance *mockAPI) CheckHost(uuid string) (hosts.Host, error) {
+	if !instance.Authed {
+		err := instance.authenticate()
 		if err != nil {
 			return hosts.Host{}, err
 		}
@@ -149,7 +177,7 @@ func CheckHost(uuid string) (hosts.Host, error) {
 		Version        string `json:"Version"`
 	}
 
-	response, err := client.PostForm("https://localhost:8001/checkHost",
+	response, err := instance.Client.PostForm("https://localhost:8001/checkHost",
 		url.Values{"uuid": {uuid}},
 	)
 	if err != nil {
@@ -170,8 +198,11 @@ func CheckHost(uuid string) (hosts.Host, error) {
 	hostResponse := APIHost{}
 	err = json.Unmarshal(bodyBytes, &hostResponse)
 	if err != nil {
+		if config.GetDebug() {
+			fmt.Printf("Returned Body: %s\n", string(bodyBytes))
+		}
 		// Probable authentication failure
-		authed = false
+		instance.Authed = false
 		return hosts.Host{}, err
 	}
 
@@ -184,9 +215,9 @@ func CheckHost(uuid string) (hosts.Host, error) {
 	}, nil
 }
 
-func ScheduleQuery(uuid string, query string) (string, error) {
-	if !authed {
-		err := authenticate()
+func (instance *mockAPI) ScheduleQuery(uuid string, query string) (string, error) {
+	if !instance.Authed {
+		err := instance.authenticate()
 		if err != nil {
 			return "", err
 		}
@@ -195,13 +226,13 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 		QueryName string `json:"queryName"`
 	}
 
-	response, err := client.PostForm("https://localhost:8001/scheduleQuery",
+	response, err := instance.Client.PostForm("https://localhost:8001/scheduleQuery",
 		url.Values{
 			"uuid":  {uuid},
 			"query": {query}},
 	)
 	if err != nil {
-		authenticate()
+		instance.authenticate()
 		return "", fmt.Errorf("ScheduleQuery call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -218,34 +249,34 @@ func ScheduleQuery(uuid string, query string) (string, error) {
 	qsResponse := QueryScheduleResponse{}
 	err = json.Unmarshal(bodyBytes, &qsResponse)
 	if err != nil {
-		authed = false
+		instance.Authed = false
 		return "", err
 	}
 	hosts.AddQueryToHost(uuid, hosts.Query{Name: qsResponse.QueryName, SQL: query})
 	return qsResponse.QueryName, nil
 }
 
-func FetchResults(queryName string) ([]map[string]string, string, error) {
+func (instance *mockAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"results"`
 		Status string              `json:"status"`
 	}
 	resultsResponse := ResultsResponse{}
 
-	if !authed {
-		err := authenticate()
+	if !instance.Authed {
+		err := instance.authenticate()
 		if err != nil {
 			return resultsResponse.Rows, "", err
 		}
 	}
 
-	response, err := client.PostForm(
+	response, err := instance.Client.PostForm(
 		"https://localhost:8001/fetchResults",
 		url.Values{"queryName": {queryName}},
 	)
 
 	if err != nil {
-		authenticate()
+		instance.authenticate()
 		return resultsResponse.Rows, "", fmt.Errorf("FetchResults call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
@@ -261,7 +292,7 @@ func FetchResults(queryName string) ([]map[string]string, string, error) {
 	}
 
 	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
-		authed = false
+		instance.Authed = false
 		return resultsResponse.Rows, "", err
 	}
 

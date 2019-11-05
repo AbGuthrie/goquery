@@ -20,11 +20,11 @@ type Alias struct {
 
 // Config is the struct containing the application state
 type Config struct {
-	CurrentPrintMode PrintMode        `json:"printMode"`
 	DebugEnabled     bool             `json:"debugEnabled"`
-	Aliases          map[string]Alias `json:"aliases"`
+	APIDriver        string           `json:"apiDriver"`
 	Experimental     bool             `json:"experimental"`
-	Api              string           `json:"api"`
+	CurrentPrintMode PrintMode        `json:"printMode"`
+	Aliases          map[string]Alias `json:"aliases"`
 }
 
 // PrintMode is a type to ensure SetPrintMode recieves a valid enum
@@ -58,7 +58,7 @@ func init() {
 	// If no config file exists, use defaults
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		SetPrintMode(PrintPretty)
-		config.Api = "mock"
+		config.APIDriver = "mock"
 		return
 	}
 
@@ -122,8 +122,8 @@ func GetExperimental() bool {
 	return config.Experimental
 }
 
-func GetApi() string {
-	return config.Api
+func GetAPIDriver() string {
+	return config.APIDriver
 }
 
 // SetPrintMode assigns .CurrentPrintMode on the current config struct
