@@ -36,7 +36,7 @@ func InitializeAPI(apiName string) error {
 		api = instance
 		break
 	default:
-		return fmt.Errorf("Unkown API implementation: %s", apiName)
+		return fmt.Errorf("Unknown API implementation: %s", apiName)
 	}
 	return nil
 }

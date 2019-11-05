@@ -95,7 +95,7 @@ func init() {
 	if config.DebugEnabled {
 		fmt.Println("Debug mode on")
 		fmt.Printf("Initialized with print mode '%s'\n", config.CurrentPrintMode)
-		fmt.Printf("Loaded %d aliase(s)\n", len(config.Aliases))
+		fmt.Printf("Loaded %d alias(es)\n", len(config.Aliases))
 		fmt.Println("")
 	}
 }

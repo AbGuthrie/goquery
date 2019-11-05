@@ -238,43 +238,58 @@ func (instance *osctrlAPI) ScheduleQuery(uuid string, query string) (string, err
 
 func (instance *osctrlAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
-		Rows   []map[string]string `json:"results"`
-		Status string              `json:"status"`
+		Rows   []map[string]string `json:"result"`
+		Status int                 `json:"status"`
+		Name   string              `json:"name"`
 	}
-	resultsResponse := ResultsResponse{}
+
+	type MachineResults = map[string]ResultsResponse
 
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
-			return resultsResponse.Rows, "", err
+			return []map[string]string{}, "", err
 		}
 	}
 
-	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/queries/%s", instance.APIBase, queryName), nil)
+	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/queries/results/%s", instance.APIBase, queryName), nil)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
 	response, err := instance.Client.Do(request)
 
 	if err != nil {
 		instance.authenticate()
-		return resultsResponse.Rows, "", fmt.Errorf("FetchResults call failed: %s", err)
+		return []map[string]string{}, "", fmt.Errorf("FetchResults call failed: %s", err)
 	}
 	if response.StatusCode == 404 {
-		return resultsResponse.Rows, "", fmt.Errorf("Unknown queryName")
+		return []map[string]string{}, "", fmt.Errorf("Unknown queryName")
 	}
 	if response.StatusCode != 200 {
-		return resultsResponse.Rows, "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+		return []map[string]string{}, "", fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return resultsResponse.Rows, "", fmt.Errorf("Could not read fetchResults response")
+		return []map[string]string{}, "", fmt.Errorf("Could not read fetchResults response")
 	}
 
-	if err := json.Unmarshal(bodyBytes, &resultsResponse); err != nil {
+	apiResponse := MachineResults{}
+	if err := json.Unmarshal(bodyBytes, &apiResponse); err != nil {
 		instance.Authed = false
-		return resultsResponse.Rows, "", err
+		return []map[string]string{}, "", err
 	}
 
-	// Return QueryResultsResponse type (outer caller should check .Status)
-	return resultsResponse.Rows, resultsResponse.Status, nil
+	if len(apiResponse) == 0 {
+		return []map[string]string{}, "Pending", nil
+	}
+
+	if len(apiResponse) < 1 {
+		return []map[string]string{}, "", fmt.Errorf("Got an unexpected number of results: %d", len(apiResponse))
+	}
+
+	for _, result := range apiResponse {
+		return result.Rows, string(result.Status), nil
+	}
+
+	panic("Machine results was guaranteed to have one result yet we didn't return it")
+	return []map[string]string{}, "", fmt.Errorf("FetchResults call failed: %s", err)
 }
