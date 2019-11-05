@@ -11,8 +11,6 @@ import (
 	"github.com/AbGuthrie/goquery/api/osctrl"
 	"github.com/AbGuthrie/goquery/utils"
 
-	// "github.com/AbGuthrie/goquery/api/private"
-
 	"github.com/AbGuthrie/goquery/hosts"
 )
 

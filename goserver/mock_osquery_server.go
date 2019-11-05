@@ -333,6 +333,7 @@ func fetchResults(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
 // End goquery APIs
