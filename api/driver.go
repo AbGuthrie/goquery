@@ -4,6 +4,7 @@ package api
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/AbGuthrie/goquery/api/mock"
@@ -15,12 +16,6 @@ import (
 )
 
 var api models.GoQueryAPI
-
-var ctrlcChannel (chan os.Signal)
-
-func init() {
-	ctrlcChannel = make(chan os.Signal, 1)
-}
 
 // InitializeAPI initializes and holds on to the specified instance/implementation
 // of the requiredmodels.GoQueryAPI interface
@@ -63,8 +58,10 @@ func FetchResults(query string) (utils.Rows, string, error) {
 
 // ScheduleQueryAndWait implements ctrl C interupt for required blocking api calls
 func ScheduleQueryAndWait(uuid, query string) (utils.Rows, error) {
+	ctrlcChannel := make(chan os.Signal, 1)
+	signal.Notify(ctrlcChannel, os.Interrupt)
+	results := make([]map[string]string, 0)
 	queryName, err := api.ScheduleQuery(uuid, query)
-	var results = make([]map[string]string, 0)
 	if err != nil {
 		return results, fmt.Errorf("ScheduleQueryAndWait call failed: %s", err)
 	}

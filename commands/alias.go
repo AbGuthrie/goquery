@@ -34,7 +34,7 @@ func alias(cmdline string) error {
 		name := args[0]
 		command := ""
 		if len(args) > 1 {
-			command = args[1]
+			command = strings.Join(args[1:], " ")
 		}
 
 		// Create the command and store in state
