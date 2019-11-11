@@ -91,14 +91,14 @@ func main() {
 		logr.Fatalf("%s", err)
 	}
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("hunter2"), bcrypt.DefaultCost)
-	err = idpServer.Store.Put("/users/alice", samlidp.User{Name: "alice",
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("goquery"), bcrypt.DefaultCost)
+	err = idpServer.Store.Put("/users/goquery", samlidp.User{Name: "goquery",
 		HashedPassword: hashedPassword,
 		Groups:         []string{"Administrators", "Users"},
-		Email:          "alice@example.com",
-		CommonName:     "Alice Smith",
-		Surname:        "Smith",
-		GivenName:      "Alice",
+		Email:          "goquery@example.com",
+		CommonName:     "goquery",
+		Surname:        "query",
+		GivenName:      "go",
 	})
 	if err != nil {
 		logr.Fatalf("%s", err)
