@@ -8,15 +8,13 @@ import (
 	"strings"
 
 	"github.com/AbGuthrie/goquery/api"
-	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/pkg/executor"
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/kolide/kit/logutil"
 	"github.com/peterbourgon/ff"
 
 	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/hosts"
-	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
@@ -62,25 +60,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	history, err := historyFile.New("")
+	if err != nil {
+		level.Info(logger).Log(
+			"msg", "Could not create history. Proceeding without",
+			"err", err,
+		)
+		history = nil
+	}
+
 	ex, err := executor.New(apiDriver,
 		executor.WithLogger(logger),
-		//executor.WithHistory(XXX),
+		executor.WithHistory(history),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not initialize executor: %s\n", err)
 		os.Exit(1)
-	}
-
-	// old
-
-	history, err := utils.LoadHistoryFile()
-	if err != nil {
-		fmt.Printf("Unable to load history file %s\n", err)
-	}
-
-	// Initialize API integration
-	if err := api.InitializeAPI(config.GetAPIDriver()); err != nil {
-		log.Fatalf("Failed to initialize API driver: %s", err)
 	}
 
 	p := prompt.New(
@@ -89,7 +84,7 @@ func main() {
 		prompt.OptionPrefix("goquery> "),
 		prompt.OptionLivePrefix(refreshLivePrefix),
 		prompt.OptionTitle("goquery"),
-		prompt.OptionHistory(history),
+		prompt.OptionHistory(history.GetRecent(100)),
 	)
 	p.Run()
 }
