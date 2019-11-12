@@ -104,15 +104,26 @@ func completer(in prompt.Document) []prompt.Suggest {
 	// Suggest any top level command
 	if _, ok := commands.CommandMap[command]; !ok {
 		prompts := []prompt.Suggest{}
-		// We also need to sort the command because go traverses maps non
+		// We also need to sort the final array because go traverses maps non
 		// deterministically
-		commandNames := make([]string, 0)
+		suggestions := make([]string, 0)
+
+		// Add all command suggestions
 		for name := range commands.CommandMap {
-			commandNames = append(commandNames, name)
+			suggestions = append(suggestions, name)
 		}
-		sort.Strings(commandNames)
-		for _, commandName := range commandNames {
-			prompts = append(prompts, prompt.Suggest{commandName, commands.CommandMap[commandName].Help()})
+		// Add all alias suggestions
+		for name := range config.GetConfig().Aliases {
+			suggestions = append(suggestions, name)
+		}
+
+		sort.Strings(suggestions)
+		for _, suggestion := range suggestions {
+			if alias, ok := config.GetConfig().Aliases[suggestion]; ok {
+				prompts = append(prompts, prompt.Suggest{suggestion, alias.Command})
+			} else if command, ok := commands.CommandMap[suggestion]; ok {
+				prompts = append(prompts, prompt.Suggest{suggestion, command.Help()})
+			}
 		}
 		return prompt.FilterHasPrefix(prompts, command, true)
 	}

@@ -2,26 +2,41 @@ package commands
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/utils"
+
 	prompt "github.com/c-bata/go-prompt"
 )
+
+func printAliases() {
+	aliases := config.GetConfig().Aliases
+	aliasNames := make([]string, 0)
+	for name := range aliases {
+		aliasNames = append(aliasNames, name)
+	}
+
+	sort.Strings(aliasNames)
+	aliasRows := make([]map[string]string, 0)
+
+	for _, aliasName := range aliasNames {
+		aliasRows = append(aliasRows, map[string]string{
+			"alias":   aliasName,
+			"command": aliases[aliasName].Command,
+		})
+	}
+
+	utils.PrettyPrintQueryResults(aliasRows)
+}
 
 func alias(cmdline string) error {
 	args := strings.Split(cmdline, " ")
 
 	// If no args provided, print current state of aliases
 	if len(args) == 1 {
-		aliases := config.GetConfig().Aliases
-		if len(aliases) == 0 {
-			fmt.Printf("No aliases set\n")
-			return nil
-		}
-		fmt.Printf("Available aliases:\n\n")
-		for _, alias := range aliases {
-			fmt.Printf("Name:    %s\nCommand: %s\n\n", alias.Name, alias.Command)
-		}
+		printAliases()
 		return nil
 	}
 
