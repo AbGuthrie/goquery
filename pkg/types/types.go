@@ -9,7 +9,7 @@ type API interface {
 	CheckHost(string) (hosts.Host, error)
 	ScheduleQuery(string, string) (string, error)
 	FetchResults(string) (utils.Rows, string, error)
-	//Close() error
+	Close() error
 }
 
 type History interface {

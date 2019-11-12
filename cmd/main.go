@@ -54,6 +54,7 @@ func main() {
 	//
 	// Options are setup. Time to setup
 	//
+
 	apiDriver, err := api.InitializeAPI(*flDriver)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not initialize API: %s\n", err)

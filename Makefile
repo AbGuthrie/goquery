@@ -8,6 +8,10 @@ build/goquery:
 	@mkdir -p build
 	go build -o $@ cmd/main.go
 
+
+clean:
+	rm -rf build
+
 .PHONY: docker deploy teardown
 
 STACK_NAME = run_goquery_infra

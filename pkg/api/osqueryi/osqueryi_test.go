@@ -48,7 +48,6 @@ func TestOsqueryi(t *testing.T) {
 
 		o, err := New()
 		require.NoError(t, err, "new")
-		o.osqueryd = "/usr/local/kolide-k2/bin/osqueryd" // FIXME
 
 		uuid, err := o.ScheduleQuery("123", tt.query)
 		if tt.err != nil {
