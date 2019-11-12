@@ -1,5 +1,13 @@
 # goquery Makefile
 
+export GO111MODULE=on
+
+all: build/goquery
+
+build/goquery:
+	@mkdir -p build
+	go build -o $@ cmd/main.go
+
 .PHONY: docker deploy teardown
 
 STACK_NAME = run_goquery_infra

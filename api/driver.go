@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/AbGuthrie/goquery-hacked-for-k2/api"
 	"github.com/AbGuthrie/goquery/api/mock"
 	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/api/osctrl"
@@ -15,30 +16,16 @@ import (
 	"github.com/AbGuthrie/goquery/hosts"
 )
 
-var api models.GoQueryAPI
-
 // InitializeAPI initializes and holds on to the specified instance/implementation
 // of the requiredmodels.GoQueryAPI interface
-func InitializeAPI(apiName string) error {
+func InitializeAPI(apiName string) (models.GoQueryAPI, error) {
 	switch apiName {
 	case "mock":
-		instance, err := mock.Intialize()
-		if err != nil {
-			return fmt.Errorf("Error initializing mock API %s", err)
-		}
-		api = instance
-		break
+		return mock.Intialize()
 	case "osctrl":
-		instance, err := osctrl.Initialize()
-		if err != nil {
-			return fmt.Errorf("Error initializing osctrl API %s", err)
-		}
-		api = instance
-		break
-	default:
-		return fmt.Errorf("Unknown API implementation: %s", apiName)
+		return osctrl.Initialize()
 	}
-	return nil
+	return nil, fmt.Errorf("Unknown API implementation: %s", apiName)
 }
 
 // CheckHost queries the api to validate the UUID references a valid, active node

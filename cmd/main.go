@@ -1,13 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/AbGuthrie/goquery/api"
 	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/pkg/executor"
+	"github.com/go-kit/kit/log"
+	"github.com/kolide/kit/logutil"
+	"github.com/peterbourgon/ff"
 
 	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/hosts"
@@ -17,6 +22,57 @@ import (
 )
 
 func main() {
+	fs := flag.NewFlagSet("goquery", flag.ExitOnError)
+	var (
+		flDriver   = fs.String("driver", "", "API driver to use")
+		flDebug    = fs.Bool("debug", false, "log debug information")
+		flSettings = fs.String("settings", "", "settings file (optional)")
+		_          = fs.String("config", "", "config file (optional)")
+	)
+
+	ff.Parse(fs, os.Args[1:],
+		ff.WithConfigFileFlag("config"),
+		ff.WithConfigFileParser(ff.PlainParser),
+		ff.WithEnvVarPrefix("GOQUERY"),
+	)
+
+	logger := logutil.NewCLILogger(*flDebug)
+
+	// Look for missing options
+	missingOpt := false
+	for flag, val := range map[string]string{
+		"driver": *flDriver,
+	} {
+		if val == "" {
+			fmt.Fprintf(os.Stderr, "Missing required flag: %s\n", flag)
+			missingOpt = true
+		}
+	}
+
+	if missingOpt {
+		os.Exit(1)
+	}
+
+	//
+	// Options are setup. Time to setup
+	//
+	apiDriver, err := api.InitializeAPI(*flDriver)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not initialize API: %s\n", err)
+		os.Exit(1)
+	}
+
+	ex, err := executor.New(apiDriver,
+		executor.WithLogger(logger),
+		//executor.WithHistory(XXX),
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not initialize executor: %s\n", err)
+		os.Exit(1)
+	}
+
+	// old
+
 	history, err := utils.LoadHistoryFile()
 	if err != nil {
 		fmt.Printf("Unable to load history file %s\n", err)
@@ -28,8 +84,8 @@ func main() {
 	}
 
 	p := prompt.New(
-		executor,
-		completer,
+		ex.PromptRun,
+		ex.Completer,
 		prompt.OptionPrefix("goquery> "),
 		prompt.OptionLivePrefix(refreshLivePrefix),
 		prompt.OptionTitle("goquery"),
@@ -49,51 +105,6 @@ func refreshLivePrefix() (string, bool) {
 	return fmt.Sprintf("goquery%s> ", subPrefix), true
 }
 
-func executor(input string) {
-	writeHistory := true
-	defer func() {
-		if !writeHistory {
-			return
-		}
-		// Write history entry
-		if err := utils.UpdateHistoryFile(input); err != nil {
-			fmt.Printf("Failed to write history file: %s\n", err)
-		}
-	}()
-
-	// Separate command and arguments
-	input = strings.TrimSpace(input)
-	args := strings.Split(input, " ")
-	if len(args) == 0 {
-		return
-	}
-
-	// Lookup and run command in command map
-	if command, ok := commands.CommandMap[args[0]]; ok {
-		err := command.Execute(input)
-		if err != nil {
-			fmt.Printf("%s: %s\n", args[0], err.Error())
-		}
-		return
-	}
-
-	// Command not found, was this command aliased?
-	alias, found := config.GetConfig().Aliases[args[0]]
-	if !found {
-		fmt.Printf("No such command: %s\n", args[0])
-		return
-	}
-	realizedCommand, err := utils.InterpolateArguments(input, alias.Command)
-	if err != nil {
-		fmt.Printf("Alias error: %s\n", err)
-		return
-	}
-
-	// Run the parsed and interpolated alias through executor again
-	writeHistory = false
-	executor(realizedCommand)
-}
-
 func completer(in prompt.Document) []prompt.Suggest {
 	command := strings.Split(in.CurrentLine(), " ")[0]
 	// Nothing has been typed at the prompt
@@ -111,6 +122,7 @@ func completer(in prompt.Document) []prompt.Suggest {
 			commandNames = append(commandNames, name)
 		}
 		sort.Strings(commandNames)
+
 		for _, commandName := range commandNames {
 			prompts = append(prompts, prompt.Suggest{commandName, commands.CommandMap[commandName].Help()})
 		}
