@@ -151,6 +151,7 @@ func (instance *osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/nodes/%s", instance.APIBase, uuid), nil)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
+	request.Header.Set("User-Agent", "goquery/1.0")
 	response, err := instance.Client.Do(request)
 
 	if err != nil {
@@ -209,6 +210,7 @@ func (instance *osctrlAPI) ScheduleQuery(uuid string, query string) (string, err
 
 	request, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/v1/queries", instance.APIBase), bytes.NewReader(qrJSON))
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
+	request.Header.Set("User-Agent", "goquery/1.0")
 	response, err := instance.Client.Do(request)
 
 	if err != nil {
@@ -254,6 +256,7 @@ func (instance *osctrlAPI) FetchResults(queryName string) ([]map[string]string, 
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/queries/results/%s", instance.APIBase, queryName), nil)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", instance.Token.Token))
+	request.Header.Set("User-Agent", "goquery/1.0")
 	response, err := instance.Client.Do(request)
 
 	if err != nil {
