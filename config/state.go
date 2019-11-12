@@ -14,8 +14,9 @@ import (
 
 // Alias is the struct used to allow abstracted commands
 type Alias struct {
-	Name    string
-	Command string `json:"command"`
+	Name        string
+	Description string `json:"description"`
+	Command     string `json:"command"`
 }
 
 // Config is the struct containing the application state
@@ -86,8 +87,9 @@ func init() {
 			continue
 		}
 		validAliases[aliasName] = Alias{
-			Name:    aliasName,
-			Command: alias.Command,
+			Name:        aliasName,
+			Command:     alias.Command,
+			Description: alias.Description,
 		}
 	}
 	config.Aliases = validAliases
