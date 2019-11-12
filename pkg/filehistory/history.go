@@ -3,6 +3,7 @@
 package filehistory
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -31,8 +32,8 @@ func New(historypath string) (*FileHistory, error) {
 	}
 
 	// Try to read history. If that fails, trigger creation of a new one.
-	if h.createNewHistoryFileIfNeeded(); err != nil {
-		return nil, errors.Wrap(err, "checking history file")
+	if err := h.openOrCreate(); err != nil {
+		return nil, errors.Wrap(err, "open or creating history file")
 	}
 
 	return h, nil
@@ -52,25 +53,30 @@ func (h *FileHistory) GetRecent(count int) []string {
 		return nil
 	}
 
-	// TODO this will fail if commands contain a \n. But that's unix history files for you...
-	fullhistory = strings.Split(string(historyBytes), "\n")
+	historyBytes = bytes.TrimSuffix(historyBytes, []byte("\n"))
 
-	return fullhistory[len(h.history-count):]
+	// TODO this will fail if commands contain a \n. But that's unix history files for you...
+	fullhistory := strings.Split(string(historyBytes), "\n")
+
+	if len(fullhistory) <= count {
+		return fullhistory
+	}
+	return fullhistory[len(fullhistory)-count:]
 
 }
 
 func (h *FileHistory) Append(line string) error {
-	if h.historyfile.WriteString(line + "\n"); err != nil {
+	if _, err := h.historyfile.WriteString(line + "\n"); err != nil {
 		return errors.Wrap(err, "writing history")
 	}
 
 	// TODO: consider skipping this, it may add write
 	// overhead. But, then we'd need something to ensure we close
 	// on exist.
-	if h.historyfile.Sync(); err != nil {
+	if err := h.historyfile.Sync(); err != nil {
 		return errors.Wrap(err, "syncing history")
 	}
-
+	return nil
 }
 
 func (h *FileHistory) guessHistoryFile() error {
@@ -83,32 +89,24 @@ func (h *FileHistory) guessHistoryFile() error {
 	return nil
 }
 
-func (h *FileHistory) createNewHistoryFileIfNeeded() error {
-	filestat, err := os.Stat(basedir)
-	if err == nil && filestat.IsRegular() {
-		return
-	}
+func (h *FileHistory) openOrCreate() error {
 
-	// Does the parent directory exist?
-	basedir := filepathBase(h.historypath)
-	dirstat, err := os.Stat(basedir)
+	basedir := filepath.Dir(h.historypath)
+	basedirStat, err := os.Stat("basedir")
 	switch {
 	case os.IsNotExist(err):
-		if err := os.MkdirAll(goQueryPath, os.ModePerm); err != nil {
+		if err := os.MkdirAll(basedir, os.ModePerm); err != nil {
 			return errors.Wrap(err, "Making goquery directory")
 		}
+	case !basedirStat.IsDir():
+		return errors.Errorf("%s exists and is not a directory", basedir)
 	case err != nil:
-		return errors.Wrap(err, "stating ~/.goquery")
-	case src.Mode().IsRegular():
-		return errors.Errorf("%s already exists, and is not a directory. Cannot make history file", basedir)
+		return errors.Wrap(err, "error stat'ing basedir")
 	}
 
-	// Now make the history file
-	// Skip the stat step, since this whole function is about making new ones
-	if h.historyfile, err = os.Create(historyPath); err != nil {
-		return errors.Wrap(err, "creating new history file")
+	if h.historyfile, err = os.OpenFile(h.historypath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err != nil {
+		return errors.Wrap(err, "opening history for writing")
 	}
-
 	return nil
 
 }
