@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/AbGuthrie/goquery/api"
@@ -11,8 +12,6 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-// TODO .query should map to Query which is blocking
-
 func listDirectory(cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
@@ -20,10 +19,25 @@ func listDirectory(cmdline string) error {
 	}
 
 	args := strings.Split(cmdline, " ") // Separate command and arguments
-	if len(args) != 1 {
-		return fmt.Errorf("This command takes no parameters")
+	lsDir := "."
+	if len(args) >= 2 {
+		lsDir = cmdline[len(args[0])+1:]
+		if len(lsDir) == 0 {
+			return fmt.Errorf("Invalid Directory")
+		}
 	}
-	listQuery := fmt.Sprintf("select * from file where directory = '%s'", host.CurrentDirectory)
+
+	if lsDir[0] != '/' {
+		lsDir = host.CurrentDirectory + lsDir
+	}
+	lsDir = filepath.Clean(lsDir)
+
+	// All directory changes must end with a forward slash
+	if lsDir[len(lsDir)-1] != '/' {
+		lsDir += "/"
+	}
+
+	listQuery := fmt.Sprintf("select * from file where directory = '%s'", lsDir)
 	results, err := api.ScheduleQueryAndWait(host.UUID, listQuery)
 
 	if err != nil {
