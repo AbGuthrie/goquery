@@ -23,8 +23,9 @@ func printAliases() {
 
 	for _, aliasName := range aliasNames {
 		aliasRows = append(aliasRows, map[string]string{
-			"alias":   aliasName,
-			"command": aliases[aliasName].Command,
+			"alias":       aliasName,
+			"command":     aliases[aliasName].Command,
+			"description": aliases[aliasName].Description,
 		})
 	}
 
