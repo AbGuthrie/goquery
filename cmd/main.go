@@ -120,6 +120,10 @@ func completer(in prompt.Document) []prompt.Suggest {
 		sort.Strings(suggestions)
 		for _, suggestion := range suggestions {
 			if alias, ok := config.GetConfig().Aliases[suggestion]; ok {
+				description := alias.Description
+				if len(description) == 0 {
+					description = alias.Command
+				}
 				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: alias.Command})
 			} else if command, ok := commands.CommandMap[suggestion]; ok {
 				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: command.Help()})
