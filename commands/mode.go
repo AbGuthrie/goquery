@@ -54,7 +54,10 @@ func changeModeSuggest(cmdline string) []prompt.Suggest {
 	sort.Strings(modeNames)
 
 	for _, mode := range modeNames {
-		prompts = append(prompts, prompt.Suggest{mode, ""})
+		prompts = append(prompts, prompt.Suggest{
+			Text:        mode,
+			Description: "",
+		})
 	}
 
 	return prompts

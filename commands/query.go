@@ -58,7 +58,10 @@ func querySuggest(cmdline string) []prompt.Suggest {
 		return prompts
 	}
 	for _, table := range host.Tables {
-		prompts = append(prompts, prompt.Suggest{table, ""})
+		prompts = append(prompts, prompt.Suggest{
+			Text:        table,
+			Description: "",
+		})
 	}
 
 	return prompts

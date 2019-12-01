@@ -17,6 +17,7 @@ import (
 	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/utils"
 
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -94,9 +95,6 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	if strings.Index(bodyStr, "Invalid username or password") != -1 {
 		return "", "", fmt.Errorf("Credential Failure")
 	}
-	if config.GetDebug() {
-		fmt.Printf("ssoResponse: %s\n", bodyStr)
-	}
 	// Hacky Extracts
 	loc := strings.Index(bodyStr, "name=\"SAMLResponse\"")
 	endLoc := strings.Index(bodyStr[loc+27:], "\" ")
@@ -123,10 +121,6 @@ func (instance *mockAPI) authenticate() error {
 		return nil
 	}
 
-	if config.GetDebug() {
-		fmt.Printf("ssoRequest: %s\nrelayState: %s\n", ssoRequest, relayState)
-	}
-
 	username, password := credentials()
 
 	response, err = instance.Client.PostForm("http://localhost:8002/sso",
@@ -137,10 +131,6 @@ func (instance *mockAPI) authenticate() error {
 	}
 
 	samlResponse, relayState, err := extractSSOResponse(response)
-	if config.GetDebug() {
-		fmt.Printf("ssoResponse: %s\nrelayState: %s\n", samlResponse, relayState)
-	}
-
 	if err != nil {
 		return err
 	}
@@ -213,6 +203,44 @@ func (instance *mockAPI) CheckHost(uuid string) (hosts.Host, error) {
 		Version:          hostResponse.Version,
 		CurrentDirectory: "/",
 	}, nil
+}
+
+func (instance *mockAPI) ListHosts() (utils.Rows, error) {
+	if !instance.Authed {
+		err := instance.authenticate()
+		if err != nil {
+			return utils.Rows{}, err
+		}
+	}
+
+	response, err := instance.Client.Get("https://localhost:8001/listHosts")
+	if err != nil {
+		// Possible Authentication Failure
+		return utils.Rows{}, fmt.Errorf("ListHosts call failed: %s", err)
+	}
+	if response.StatusCode == 404 {
+		return utils.Rows{}, fmt.Errorf("Unknown Host")
+	}
+	if response.StatusCode != 200 {
+		return utils.Rows{}, fmt.Errorf("Server returned unknown error: %d", response.StatusCode)
+	}
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return utils.Rows{}, fmt.Errorf("Could not read response")
+	}
+	var hostResponse utils.Rows
+	err = json.Unmarshal(bodyBytes, &hostResponse)
+	if err != nil {
+		if config.GetDebug() {
+			fmt.Printf("Returned Body: %s\n", string(bodyBytes))
+		}
+		// Probable authentication failure
+		instance.Authed = false
+		return utils.Rows{}, err
+	}
+
+	return hostResponse, nil
 }
 
 func (instance *mockAPI) ScheduleQuery(uuid string, query string) (string, error) {

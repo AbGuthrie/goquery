@@ -45,7 +45,10 @@ func resumeSuggest(cmdline string) []prompt.Suggest {
 	}
 
 	for _, query := range host.QueryHistory {
-		prompts = append(prompts, prompt.Suggest{query.Name, query.SQL})
+		prompts = append(prompts, prompt.Suggest{
+			Text:        query.Name,
+			Description: query.SQL,
+		})
 	}
 	return prompts
 }

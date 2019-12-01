@@ -27,6 +27,7 @@ func init() {
 		".connect":    GoQueryCommand{connect, connectHelp, connectSuggest},
 		".clear":      GoQueryCommand{clear, clearHelp, clearSuggest},
 		".disconnect": GoQueryCommand{disconnect, disconnectHelp, disconnectSuggest},
+		".discover":   GoQueryCommand{discover, discoverHelp, discoverSuggest},
 		".exit":       GoQueryCommand{exit, exitHelp, exitSuggest},
 		".help":       GoQueryCommand{help, helpHelp, helpSuggest},
 		".history":    GoQueryCommand{history, historyHelp, historySuggest},

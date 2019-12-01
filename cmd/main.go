@@ -124,9 +124,9 @@ func completer(in prompt.Document) []prompt.Suggest {
 				if len(description) == 0 {
 					description = alias.Command
 				}
-				prompts = append(prompts, prompt.Suggest{suggestion, description})
+				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: alias.Command})
 			} else if command, ok := commands.CommandMap[suggestion]; ok {
-				prompts = append(prompts, prompt.Suggest{suggestion, command.Help()})
+				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: command.Help()})
 			}
 		}
 		return prompt.FilterHasPrefix(prompts, command, true)
