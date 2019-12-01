@@ -10,6 +10,7 @@ import (
 // is blind to the implementation for code separation purposes.
 type GoQueryAPI interface {
 	CheckHost(string) (hosts.Host, error)
+	ListHosts() (utils.Rows, error)
 	ScheduleQuery(string, string) (string, error)
 	FetchResults(string) (utils.Rows, string, error)
 }

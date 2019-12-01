@@ -46,6 +46,11 @@ func CheckHost(uuid string) (hosts.Host, error) {
 	return api.CheckHost(uuid)
 }
 
+// ListHosts asks the server for all the enrolled osquery nodes
+func ListHosts() (utils.Rows, error) {
+	return api.ListHosts()
+}
+
 // ScheduleQuery posts a query for the target host that osquery will poll for
 func ScheduleQuery(uuid string, query string) (string, error) {
 	return api.ScheduleQuery(uuid, query)

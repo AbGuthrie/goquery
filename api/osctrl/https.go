@@ -16,6 +16,7 @@ import (
 
 	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/utils"
 
 	"github.com/AbGuthrie/goquery/hosts"
 
@@ -188,6 +189,11 @@ func (instance *osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
 		Username:         hostResponse.Username,
 		CurrentDirectory: "/",
 	}, nil
+}
+
+func (instance *osctrlAPI) ListHosts() (utils.Rows, error) {
+	// TODO: integrate osctrl
+	return utils.Rows{}, nil
 }
 
 func (instance *osctrlAPI) ScheduleQuery(uuid string, query string) (string, error) {

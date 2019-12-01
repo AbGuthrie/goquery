@@ -55,7 +55,10 @@ func connectHelp() string {
 func connectSuggest(cmdline string) []prompt.Suggest {
 	prompts := []prompt.Suggest{}
 	for _, host := range hosts.GetCurrentHosts() {
-		prompts = append(prompts, prompt.Suggest{host.UUID, host.ComputerName})
+		prompts = append(prompts, prompt.Suggest{
+			Text:        host.UUID,
+			Description: host.ComputerName,
+		})
 	}
 	return prompts
 }

@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -290,6 +291,26 @@ func checkHost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", renderedHost)
 }
 
+func listHosts(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("List hosts call")
+	hosts := []Host{}
+
+	for _, enrolledHost := range enrolledHosts {
+		hosts = append(hosts, enrolledHost)
+	}
+
+	sort.SliceStable(hosts, func(i, j int) bool {
+		return hosts[i].ComputerName > hosts[j].ComputerName
+	})
+
+	hostsJSON, err := json.Marshal(hosts)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "%s", hostsJSON)
+}
+
 func scheduleQuery(w http.ResponseWriter, r *http.Request) {
 	uuid := r.FormValue("uuid")
 	sentQuery, err := json.Marshal(r.FormValue("query"))
@@ -416,16 +437,19 @@ func main() {
 		}
 		fmt.Printf("Registered ourselves with the IDP Service\n")
 
-		ch := http.HandlerFunc(checkHost)
-		sq := http.HandlerFunc(scheduleQuery)
-		fr := http.HandlerFunc(fetchResults)
+		_checkHost := http.HandlerFunc(checkHost)
+		_listHosts := http.HandlerFunc(listHosts)
+		_scheduleQuery := http.HandlerFunc(scheduleQuery)
+		_fetchResults := http.HandlerFunc(fetchResults)
 
-		http.Handle("/checkHost", samlSP.RequireAccount(ch))
-		http.Handle("/scheduleQuery", samlSP.RequireAccount(sq))
-		http.Handle("/fetchResults", samlSP.RequireAccount(fr))
+		http.Handle("/checkHost", samlSP.RequireAccount(_checkHost))
+		http.Handle("/listHosts", _listHosts)
+		http.Handle("/scheduleQuery", samlSP.RequireAccount(_scheduleQuery))
+		http.Handle("/fetchResults", samlSP.RequireAccount(_fetchResults))
 		http.Handle("/saml/", samlSP)
 	} else {
 		http.HandleFunc("/checkHost", checkHost)
+		http.HandleFunc("/listHosts", listHosts)
 		http.HandleFunc("/scheduleQuery", scheduleQuery)
 		http.HandleFunc("/fetchResults", fetchResults)
 	}
