@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
 	"github.com/AbGuthrie/goquery/models"
 
@@ -22,17 +21,19 @@ import (
 )
 
 type MockAPI struct {
-	Token     string
-	CookieJar *cookiejar.Jar
-	Client    *http.Client
-	Authed    bool
+	Token           string
+	CookieJar       *cookiejar.Jar
+	Client          *http.Client
+	Authed          bool
+	DevelopmentMode bool
 }
 
 // CreateMockAPI creates and returns an api implementation that implements the models.GoQueryAPI interface
 // can easily be parameterized with flags passed from main via the config.json
 func CreateMockAPI(developmentMode bool) (models.GoQueryAPI, error) {
 	instance := MockAPI{
-		Authed: false,
+		Authed:          false,
+		DevelopmentMode: developmentMode,
 	}
 
 	instance.CookieJar, _ = cookiejar.New(nil)
@@ -82,7 +83,7 @@ func extractSSORequest(response *http.Response) (string, string) {
 	return samlRequest, relayState
 }
 
-func extractSSOResponse(response *http.Response) (string, string, error) {
+func extractSSOResponse(response *http.Response, debug bool) (string, string, error) {
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return "", "", err
@@ -91,7 +92,7 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	if strings.Index(bodyStr, "Invalid username or password") != -1 {
 		return "", "", fmt.Errorf("Credential Failure")
 	}
-	if config.GetDebug() {
+	if debug {
 		fmt.Printf("ssoResponse: %s\n", bodyStr)
 	}
 	// Hacky Extracts
@@ -120,7 +121,7 @@ func (instance *MockAPI) authenticate() error {
 		return nil
 	}
 
-	if config.GetDebug() {
+	if instance.DevelopmentMode {
 		fmt.Printf("ssoRequest: %s\nrelayState: %s\n", ssoRequest, relayState)
 	}
 
@@ -133,8 +134,8 @@ func (instance *MockAPI) authenticate() error {
 		return err
 	}
 
-	samlResponse, relayState, err := extractSSOResponse(response)
-	if config.GetDebug() {
+	samlResponse, relayState, err := extractSSOResponse(response, instance.DevelopmentMode)
+	if instance.DevelopmentMode {
 		fmt.Printf("ssoResponse: %s\nrelayState: %s\n", samlResponse, relayState)
 	}
 
@@ -146,7 +147,7 @@ func (instance *MockAPI) authenticate() error {
 		url.Values{"SAMLResponse": {samlResponse}, "RelayState": {relayState}},
 	)
 
-	if config.GetDebug() {
+	if instance.DevelopmentMode {
 		fmt.Printf("samlResponse: %s\nrelayState: %s\n", response, relayState)
 	}
 
@@ -195,7 +196,7 @@ func (instance *MockAPI) CheckHost(uuid string) (hosts.Host, error) {
 	hostResponse := APIHost{}
 	err = json.Unmarshal(bodyBytes, &hostResponse)
 	if err != nil {
-		if config.GetDebug() {
+		if instance.DevelopmentMode {
 			fmt.Printf("Returned Body: %s\n", string(bodyBytes))
 		}
 		// Probable authentication failure
