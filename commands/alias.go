@@ -5,14 +5,16 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/models"
+
 	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func printAliases() {
-	aliases := config.GetConfig().Aliases
+func printAliases(config config.Config) {
+	aliases := config.Aliases
 	aliasNames := make([]string, 0)
 	for name := range aliases {
 		aliasNames = append(aliasNames, name)
@@ -29,15 +31,15 @@ func printAliases() {
 		})
 	}
 
-	utils.PrettyPrintQueryResults(aliasRows)
+	utils.PrettyPrintQueryResults(aliasRows, config.PrintMode)
 }
 
-func alias(cmdline string) error {
+func alias(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ")
 
 	// If no args provided, print current state of aliases
 	if len(args) == 1 {
-		printAliases()
+		printAliases(config)
 		return nil
 	}
 

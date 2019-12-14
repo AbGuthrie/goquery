@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func schedule(cmdline string) error {
+func schedule(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)

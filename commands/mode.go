@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/models"
 
 	prompt "github.com/c-bata/go-prompt"
 )
@@ -16,7 +17,7 @@ var validModes = map[string]config.PrintMode{
 	"pretty": config.PrintPretty,
 }
 
-func changeMode(cmdline string) error {
+func changeMode(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
 		return fmt.Errorf("Mode parameter required")

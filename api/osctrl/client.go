@@ -14,8 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AbGuthrie/goquery/api/models"
-	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/models"
 
 	"github.com/AbGuthrie/goquery/hosts"
 
@@ -28,7 +27,7 @@ type tokenResponse struct {
 	Expiration string `json:"expiration"`
 }
 
-type osctrlAPI struct {
+type OSctrlAPI struct {
 	Token     tokenResponse
 	CookieJar *cookiejar.Jar
 	Client    *http.Client
@@ -40,16 +39,14 @@ type osctrlAPI struct {
 	APIBase   string
 }
 
-var instance osctrlAPI
-
-// Initialize creates and returns an api implementation that implements the models.GoQueryAPI interface
+// CreateOSctrlAPI creates and returns an api implementation that implements the models.GoQueryAPI interface
 // can easily be parameterized with flags passed from main via the config.json
-func Initialize() (models.GoQueryAPI, error) {
+func CreateOSctrlAPI(developmentMode bool) (models.GoQueryAPI, error) {
 	adminServer := "osctrl-admin.domain.tld"
 	protocol := "https"
 	apiServer := "osctrl-api.domain.tld"
 
-	instance = osctrlAPI{
+	instance := OSctrlAPI{
 		Authed:    false,
 		Protocol:  protocol,
 		AdminBase: fmt.Sprintf("%s://%s", protocol, adminServer),
@@ -57,14 +54,13 @@ func Initialize() (models.GoQueryAPI, error) {
 	}
 
 	instance.CookieJar, _ = cookiejar.New(nil)
-	debugEnabled := config.GetDebug()
-	if debugEnabled {
-		fmt.Println("Warning: Debug is enabled, setting InsecureSkipVerify: True for auth request client!")
+	if developmentMode {
+		fmt.Println("Warning: developmentMode is enabled, setting InsecureSkipVerify: True for auth request client!")
 	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: debugEnabled,
+			InsecureSkipVerify: developmentMode,
 		},
 	}
 	instance.Client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: instance.CookieJar}
@@ -85,7 +81,7 @@ func credentials() (string, string) {
 	return strings.TrimSpace(username), password
 }
 
-func (instance *osctrlAPI) authenticate() error {
+func (instance *OSctrlAPI) authenticate() error {
 	response, err := instance.Client.Get(instance.AdminBase)
 
 	if err != nil {
@@ -133,7 +129,7 @@ func (instance *osctrlAPI) authenticate() error {
 	return nil
 }
 
-func (instance *osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
+func (instance *OSctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
@@ -190,7 +186,7 @@ func (instance *osctrlAPI) CheckHost(uuid string) (hosts.Host, error) {
 	}, nil
 }
 
-func (instance *osctrlAPI) ScheduleQuery(uuid string, query string) (string, error) {
+func (instance *OSctrlAPI) ScheduleQuery(uuid string, query string) (string, error) {
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
@@ -238,7 +234,7 @@ func (instance *osctrlAPI) ScheduleQuery(uuid string, query string) (string, err
 	return qsResponse.QueryName, nil
 }
 
-func (instance *osctrlAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
+func (instance *OSctrlAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"result"`
 		Status int                 `json:"status"`

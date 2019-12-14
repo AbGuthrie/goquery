@@ -1,30 +1,34 @@
-package main
+package goquery
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
-	"github.com/AbGuthrie/goquery/config"
-
 	"github.com/AbGuthrie/goquery/commands"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func main() {
+var apiInstance models.GoQueryAPI
+var options config.Config
+
+// Run is the entry point for a file impporting the goquery library to start the prompt REPL
+func Run(api models.GoQueryAPI, _config config.Config) {
+	// Print errors/warnings with provided aliases, and print state of debug flags
+	_config.Validate()
+
+	// Set globals for executor function closure
+	options = _config
+	apiInstance = api
+
 	history, err := utils.LoadHistoryFile()
 	if err != nil {
 		fmt.Printf("Unable to load history file %s\n", err)
-	}
-
-	// Initialize API integration
-	if err := api.InitializeAPI(config.GetAPIDriver()); err != nil {
-		log.Fatalf("Failed to initialize API driver: %s", err)
 	}
 
 	p := prompt.New(
@@ -70,7 +74,7 @@ func executor(input string) {
 
 	// Lookup and run command in command map
 	if command, ok := commands.CommandMap[args[0]]; ok {
-		err := command.Execute(input)
+		err := command.Execute(apiInstance, options, input)
 		if err != nil {
 			fmt.Printf("%s: %s\n", args[0], err.Error())
 		}
@@ -78,7 +82,7 @@ func executor(input string) {
 	}
 
 	// Command not found, was this command aliased?
-	alias, found := config.GetConfig().Aliases[args[0]]
+	alias, found := options.Aliases[args[0]]
 	if !found {
 		fmt.Printf("No such command: %s\n", args[0])
 		return
@@ -113,20 +117,20 @@ func completer(in prompt.Document) []prompt.Suggest {
 			suggestions = append(suggestions, name)
 		}
 		// Add all alias suggestions
-		for name := range config.GetConfig().Aliases {
+		for name := range options.Aliases {
 			suggestions = append(suggestions, name)
 		}
 
 		sort.Strings(suggestions)
 		for _, suggestion := range suggestions {
-			if alias, ok := config.GetConfig().Aliases[suggestion]; ok {
+			if alias, ok := options.Aliases[suggestion]; ok {
 				description := alias.Description
 				if len(description) == 0 {
 					description = alias.Command
 				}
-				prompts = append(prompts, prompt.Suggest{suggestion, description})
+				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: alias.Command})
 			} else if command, ok := commands.CommandMap[suggestion]; ok {
-				prompts = append(prompts, prompt.Suggest{suggestion, command.Help()})
+				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: command.Help()})
 			}
 		}
 		return prompt.FilterHasPrefix(prompts, command, true)

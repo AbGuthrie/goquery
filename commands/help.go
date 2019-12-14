@@ -3,12 +3,14 @@ package commands
 import (
 	"sort"
 
+	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/models"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func help(cmdline string) error {
+func help(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	commandNames := make([]string, 0)
 	for k, _ := range CommandMap {
 		commandNames = append(commandNames, k)
@@ -24,7 +26,7 @@ func help(cmdline string) error {
 		})
 	}
 
-	utils.PrettyPrintQueryResults(helpRows)
+	utils.PrettyPrintQueryResults(helpRows, config.PrintMode)
 	return nil
 }
 

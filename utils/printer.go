@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/AbGuthrie/goquery/models"
 )
 
-type Rows = []map[string]string
-
-func prettyPrintQueryResultsJSON(results Rows) {
+func prettyPrintQueryResultsJSON(results models.Rows) {
 	formatted, err := json.MarshalIndent(results, "", "    ")
 	if err != nil {
 		fmt.Printf("Could not format query results.\n")
@@ -19,7 +19,7 @@ func prettyPrintQueryResultsJSON(results Rows) {
 	fmt.Printf("%s\n", formatted)
 }
 
-func prettyPrintQueryResultsLines(results Rows) {
+func prettyPrintQueryResultsLines(results models.Rows) {
 	if len(results) == 0 {
 		return
 	}
@@ -39,7 +39,7 @@ func prettyPrintQueryResultsLines(results Rows) {
 	}
 }
 
-func prettyPrintQueryResultsPretty(results Rows) {
+func prettyPrintQueryResultsPretty(results models.Rows) {
 	maxLens, err := calculateMaxColumnLengths(results)
 	if err != nil {
 		return
@@ -72,7 +72,7 @@ func prettyPrintQueryResultsPretty(results Rows) {
 	fmt.Printf("%s\n", divider)
 }
 
-func calculateMaxColumnLengths(results Rows) (map[string]int, error) {
+func calculateMaxColumnLengths(results models.Rows) (map[string]int, error) {
 	if len(results) == 0 {
 		return map[string]int{}, fmt.Errorf("Cannot calculate lengths with no rows")
 	}
@@ -80,7 +80,7 @@ func calculateMaxColumnLengths(results Rows) (map[string]int, error) {
 	maxLengths := make(map[string]int)
 
 	// They key may be longer than the values in some cases like inode
-	for columnName, _ := range results[0] {
+	for columnName := range results[0] {
 		maxLengths[columnName] = len(columnName)
 	}
 

@@ -14,37 +14,34 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-type mockAPI struct {
+type MockAPI struct {
 	Token     string
 	CookieJar *cookiejar.Jar
 	Client    *http.Client
 	Authed    bool
 }
 
-var instance mockAPI
-
-// Intialize creates and returns an api implementation that implements the models.GoQueryAPI interface
+// CreateMockAPI creates and returns an api implementation that implements the models.GoQueryAPI interface
 // can easily be parameterized with flags passed from main via the config.json
-func Intialize() (models.GoQueryAPI, error) {
-	instance = mockAPI{
+func CreateMockAPI(developmentMode bool) (models.GoQueryAPI, error) {
+	instance := MockAPI{
 		Authed: false,
 	}
 
 	instance.CookieJar, _ = cookiejar.New(nil)
-	debugEnabled := config.GetDebug()
-	if debugEnabled {
+	if developmentMode {
 		fmt.Println("Warning: Debug is enabled, setting InsecureSkipVerify: True for auth request client!")
 	}
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: debugEnabled,
+			InsecureSkipVerify: developmentMode,
 		},
 	}
 	instance.Client = &http.Client{Transport: tr, Timeout: time.Second * 10, Jar: instance.CookieJar}
@@ -108,7 +105,7 @@ func extractSSOResponse(response *http.Response) (string, string, error) {
 	return ssoResponse, relayState, nil
 }
 
-func (instance *mockAPI) authenticate() error {
+func (instance *MockAPI) authenticate() error {
 	response, err := instance.Client.Get("https://localhost:8001/checkHost")
 	if err != nil {
 		return fmt.Errorf("Authentication failed: %s", err)
@@ -162,7 +159,7 @@ func (instance *mockAPI) authenticate() error {
 	return nil
 }
 
-func (instance *mockAPI) CheckHost(uuid string) (hosts.Host, error) {
+func (instance *MockAPI) CheckHost(uuid string) (hosts.Host, error) {
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
@@ -215,7 +212,7 @@ func (instance *mockAPI) CheckHost(uuid string) (hosts.Host, error) {
 	}, nil
 }
 
-func (instance *mockAPI) ScheduleQuery(uuid string, query string) (string, error) {
+func (instance *MockAPI) ScheduleQuery(uuid string, query string) (string, error) {
 	if !instance.Authed {
 		err := instance.authenticate()
 		if err != nil {
@@ -256,7 +253,7 @@ func (instance *mockAPI) ScheduleQuery(uuid string, query string) (string, error
 	return qsResponse.QueryName, nil
 }
 
-func (instance *mockAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
+func (instance *MockAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	type ResultsResponse struct {
 		Rows   []map[string]string `json:"results"`
 		Status string              `json:"status"`

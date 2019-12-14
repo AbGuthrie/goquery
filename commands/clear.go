@@ -7,10 +7,12 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/models"
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func clear(cmdline string) error {
+func clear(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) > 1 {
 		return fmt.Errorf("This command takes no parameters")

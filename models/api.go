@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/AbGuthrie/goquery/hosts"
-	"github.com/AbGuthrie/goquery/utils"
 )
 
 // GoQueryAPI defines the set of functions needed for goquery to interface with a backend
@@ -11,5 +10,5 @@ import (
 type GoQueryAPI interface {
 	CheckHost(string) (hosts.Host, error)
 	ScheduleQuery(string, string) (string, error)
-	FetchResults(string) (utils.Rows, string, error)
+	FetchResults(string) (Rows, string, error)
 }

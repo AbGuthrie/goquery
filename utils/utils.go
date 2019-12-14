@@ -7,9 +7,8 @@ import (
 
 // PrettyPrintQueryResults prints a given []result map set to standard out
 // taking into consideration the current state.go's print mode
-func PrettyPrintQueryResults(results []map[string]string) {
-	currentConfig := config.GetConfig()
-	switch currentConfig.CurrentPrintMode {
+func PrettyPrintQueryResults(results []map[string]string, printMode config.PrintMode) {
+	switch printMode {
 	case config.PrintJSON:
 		prettyPrintQueryResultsJSON(results)
 	case config.PrintLine:

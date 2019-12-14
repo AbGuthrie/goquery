@@ -5,14 +5,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func listDirectory(cmdline string) error {
+func listDirectory(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)
@@ -38,13 +39,13 @@ func listDirectory(cmdline string) error {
 	}
 
 	listQuery := fmt.Sprintf("select * from file where directory = '%s'", lsDir)
-	results, err := api.ScheduleQueryAndWait(host.UUID, listQuery)
+	results, err := utils.ScheduleQueryAndWait(api, host.UUID, listQuery)
 
 	if err != nil {
 		return err
 	}
 
-	utils.PrettyPrintQueryResults(results)
+	utils.PrettyPrintQueryResults(results, config.PrintMode)
 	return nil
 }
 

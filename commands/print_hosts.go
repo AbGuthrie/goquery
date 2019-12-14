@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func printHosts(cmdline string) error {
+func printHosts(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) > 1 {
 		return fmt.Errorf("This command takes no parameters")
@@ -29,7 +31,7 @@ func printHosts(cmdline string) error {
 		})
 	}
 
-	utils.PrettyPrintQueryResults(hostRows)
+	utils.PrettyPrintQueryResults(hostRows, config.PrintMode)
 
 	return nil
 }

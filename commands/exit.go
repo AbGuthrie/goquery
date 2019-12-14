@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/models"
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func exit(cmdline string) error {
+func exit(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	fmt.Printf("Goodbye!\n")
 	os.Exit(0)
 	return errRuntimeError
