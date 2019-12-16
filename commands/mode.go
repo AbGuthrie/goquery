@@ -11,7 +11,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-var validModes = map[string]config.PrintMode{
+var validModes = map[string]config.PrintModeEnum{
 	"json":   config.PrintJSON,
 	"line":   config.PrintLine,
 	"pretty": config.PrintPretty,
@@ -38,7 +38,7 @@ func changeMode(api models.GoQueryAPI, config config.Config, cmdline string) err
 
 func changeModeHelp() string {
 	modeNames := make([]string, 0)
-	for mode, _ := range validModes {
+	for mode := range validModes {
 		modeNames = append(modeNames, mode)
 	}
 	sort.Strings(modeNames)
@@ -49,13 +49,16 @@ func changeModeSuggest(cmdline string) []prompt.Suggest {
 	prompts := []prompt.Suggest{}
 
 	modeNames := make([]string, 0)
-	for mode, _ := range validModes {
+	for mode := range validModes {
 		modeNames = append(modeNames, mode)
 	}
 	sort.Strings(modeNames)
 
 	for _, mode := range modeNames {
-		prompts = append(prompts, prompt.Suggest{mode, ""})
+		prompts = append(prompts, prompt.Suggest{
+			Text:        mode,
+			Description: "",
+		})
 	}
 
 	return prompts

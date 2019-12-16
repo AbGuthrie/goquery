@@ -74,8 +74,6 @@ List the files in the current directory. The current directory is set by using t
 # Integration
 
 To use goquery, import the dependency and pass an API struct that implements the GoQueryAPI interface. Provide your own or use the provided built ins. You can see an example of how this is done in the `examples/` folder. You can also build a version of goquery that works with the mock server by running `make mock`.
-
-
 To support the various features of goquery, your backend will need to support a number of APIs to interact with your fleet. The core APIs are required for basic functionality but future APIs may focus on more fringe features such as ATC, file pulling, etc. goquery can work without these APIs and that functionality will be disabled.
 
 ## Core API
