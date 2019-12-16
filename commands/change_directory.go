@@ -52,11 +52,11 @@ func changeDirectory(api models.GoQueryAPI, config config.Config, cmdline string
 		return err
 	}
 
-	if len(results) == 1 {
-		return hosts.SetCurrentHostDirectory(requestedDirectory)
+	if len(results) != 1 {
+		return fmt.Errorf("No such directory")
 	}
 
-	return fmt.Errorf("No such directory")
+	return hosts.SetCurrentHostDirectory(requestedDirectory)
 }
 
 func changeDirectoryHelp() string {

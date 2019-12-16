@@ -94,8 +94,8 @@ func main() {
 	// 1. Provide something that implements the required models/GoQueryAPI interface,
 	//	  or use a supported built in (see `api/mock` for example implementation)
 	api := myCustomAPI{}
-	// osctrlAPI, err := osctrl.CreateOSctrlAPI(true)	// import goquery/api/mock
-	// mockAPI, err := mock.CreateMockAPI(true)			// import goquery/api/osctrl
+	// osctrlAPI, err := osctrl.CreateOSctrlAPI(true)	// import goquery/api/osctrl
+	// mockAPI, err := mock.CreateMockAPI(true)			// import goquery/api/mock
 
 	// 2. Create goquery configuration options (aliases, print mode, debug etc.)
 	config := config.Config{

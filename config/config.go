@@ -19,18 +19,18 @@ type Config struct {
 	DebugEnabled bool             `json:"debugEnabled"`
 	APIDriver    string           `json:"apiDriver"`
 	Experimental bool             `json:"experimental"`
-	PrintMode    PrintMode        `json:"printMode"`
+	PrintMode    PrintModeEnum    `json:"printMode"`
 	Aliases      map[string]Alias `json:"aliases"`
 }
 
-// PrintMode is a type to ensure SetPrintMode recieves a valid enum
-type PrintMode string
+// PrintModeEnum is a type to ensure SetPrintMode recieves a valid enum
+type PrintModeEnum string
 
-// PrintMode constants enum
+// PrintModeEnum constants enum
 const (
-	PrintJSON   PrintMode = "json"
-	PrintLine   PrintMode = "line"
-	PrintPretty PrintMode = "pretty"
+	PrintJSON   PrintModeEnum = "json"
+	PrintLine   PrintModeEnum = "line"
+	PrintPretty PrintModeEnum = "pretty"
 )
 
 // Validate is responsible for filtering incorrect aliases configured, and printing the state of debug modes
@@ -61,29 +61,8 @@ func (config *Config) Validate() {
 	}
 }
 
-// SetDebug assigns .Debug on the current config struct
-func (config *Config) SetDebug(enabled bool) {
-	config.DebugEnabled = enabled
-}
-
-func (config *Config) GetDebug() bool {
-	return config.DebugEnabled
-}
-
-func (config *Config) SetExperimental(enabled bool) {
-	config.Experimental = enabled
-}
-
-func (config *Config) GetExperimental() bool {
-	return config.Experimental
-}
-
-func (config *Config) GetAPIDriver() string {
-	return config.APIDriver
-}
-
 // SetPrintMode assigns .PrintMode on the current config struct
-func (config *Config) SetPrintMode(printMode PrintMode) {
+func (config *Config) SetPrintMode(printMode PrintModeEnum) {
 	config.PrintMode = printMode
 }
 
