@@ -3,3 +3,4 @@ osqueryd
 *.swp
 .DS_Store
 api/private/
+build

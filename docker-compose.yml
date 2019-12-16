@@ -1,4 +1,4 @@
-version: "3"
+version: "3.7"
 
 services:
   goserversaml:
@@ -6,7 +6,6 @@ services:
     ports:
       - "8002:8002"
     networks:
-      - private-net
       - public-net
   goserver:
     image: goserver:latest
@@ -20,12 +19,9 @@ services:
   osquery-ubuntu18:
     image: osquerydist:latest
     deploy:
-        replicas: 2
+      replicas: 2
     depends_on:
       - "goserver"
-    build:
-      context: .
-      dockerfile: "docker/nodes/ubuntu18/Dockerfile"
     networks:
       - private-net
 networks:
