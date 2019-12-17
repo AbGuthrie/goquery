@@ -17,7 +17,7 @@ var validModes = map[string]config.PrintModeEnum{
 	"pretty": config.PrintPretty,
 }
 
-func changeMode(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func changeMode(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
 		return fmt.Errorf("Mode parameter required")

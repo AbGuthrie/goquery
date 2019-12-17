@@ -10,7 +10,7 @@ import (
 
 // GoQueryCommand defines the functions required to add a new command to goquery
 type GoQueryCommand struct {
-	Execute     func(models.GoQueryAPI, config.Config, string) error
+	Execute     func(models.GoQueryAPI, *config.Config, string) error
 	Help        func() string
 	Suggestions func(string) []prompt.Suggest
 }

@@ -15,7 +15,7 @@ import (
 
 var verificationTemplate = "select * from file where path = '%s' and type = 'directory'"
 
-func changeDirectory(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func changeDirectory(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)

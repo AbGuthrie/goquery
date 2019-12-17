@@ -74,7 +74,7 @@ func executor(input string) {
 
 	// Lookup and run command in command map
 	if command, ok := commands.CommandMap[args[0]]; ok {
-		err := command.Execute(apiInstance, options, input)
+		err := command.Execute(apiInstance, &options, input)
 		if err != nil {
 			fmt.Printf("%s: %s\n", args[0], err.Error())
 		}

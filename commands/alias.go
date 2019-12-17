@@ -13,7 +13,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func printAliases(config config.Config) {
+func printAliases(config *config.Config) {
 	aliases := config.Aliases
 	aliasNames := make([]string, 0)
 	for name := range aliases {
@@ -34,7 +34,7 @@ func printAliases(config config.Config) {
 	utils.PrettyPrintQueryResults(aliasRows, config.PrintMode)
 }
 
-func alias(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func alias(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ")
 
 	// If no args provided, print current state of aliases
