@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func query(cmdline string) error {
+func query(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)
@@ -23,13 +24,13 @@ func query(cmdline string) error {
 	}
 	// TODO This needs to support Unicode/Runes
 	commandStripped := cmdline[strings.Index(cmdline, " ")+1:]
-	results, err := api.ScheduleQueryAndWait(host.UUID, commandStripped)
+	results, err := utils.ScheduleQueryAndWait(api, host.UUID, commandStripped)
 
 	if err != nil {
 		return err
 	}
 
-	utils.PrettyPrintQueryResults(results)
+	utils.PrettyPrintQueryResults(results, config.PrintMode)
 
 	return nil
 }

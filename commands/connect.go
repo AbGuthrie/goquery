@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func connect(cmdline string) error {
+func connect(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
 		return fmt.Errorf("Host UUID required")
@@ -27,7 +29,8 @@ func connect(cmdline string) error {
 	}
 	fmt.Printf("Verified Host(%s) Exists.\n", uuid)
 
-	results, err := api.ScheduleQueryAndWait(
+	results, err := utils.ScheduleQueryAndWait(
+		api,
 		host.UUID,
 		"select name from osquery_registry where registry = 'table' and active = 1",
 	)

@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
 	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func resume(cmdline string) error {
+func resume(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) == 1 {
 		return fmt.Errorf("A query name to resume must be provided")
@@ -28,7 +29,7 @@ func resume(cmdline string) error {
 		return fmt.Errorf("Query does not have results available yet")
 	}
 
-	utils.PrettyPrintQueryResults(results)
+	utils.PrettyPrintQueryResults(results, config.PrintMode)
 
 	return nil
 }

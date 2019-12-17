@@ -5,15 +5,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/api"
+	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )
 
 var verificationTemplate = "select * from file where path = '%s' and type = 'directory'"
 
-func changeDirectory(cmdline string) error {
+func changeDirectory(api models.GoQueryAPI, config config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)
@@ -44,19 +46,17 @@ func changeDirectory(cmdline string) error {
 	}
 
 	verificationQuery := fmt.Sprintf(verificationTemplate, requestedDirectory)
-	results, err := api.ScheduleQueryAndWait(host.UUID, verificationQuery)
+	results, err := utils.ScheduleQueryAndWait(api, host.UUID, verificationQuery)
 
 	if err != nil {
 		return err
 	}
 
-	if len(results) == 1 {
-		return hosts.SetCurrentHostDirectory(requestedDirectory)
-	} else {
+	if len(results) != 1 {
 		return fmt.Errorf("No such directory")
 	}
 
-	return nil
+	return hosts.SetCurrentHostDirectory(requestedDirectory)
 }
 
 func changeDirectoryHelp() string {

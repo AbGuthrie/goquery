@@ -3,12 +3,14 @@ package commands
 import (
 	"errors"
 
+	"github.com/AbGuthrie/goquery/config"
+	"github.com/AbGuthrie/goquery/models"
 	prompt "github.com/c-bata/go-prompt"
 )
 
 // GoQueryCommand defines the functions required to add a new command to goquery
 type GoQueryCommand struct {
-	Execute     func(string) error
+	Execute     func(models.GoQueryAPI, config.Config, string) error
 	Help        func() string
 	Suggestions func(string) []prompt.Suggest
 }
