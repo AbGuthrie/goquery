@@ -11,7 +11,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func history(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func history(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	args := strings.Split(cmdline, " ") // Separate command and arguments
 	if len(args) > 1 {
 		return fmt.Errorf("This command takes no parameters")

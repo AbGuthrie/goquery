@@ -11,7 +11,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func schedule(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func schedule(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)

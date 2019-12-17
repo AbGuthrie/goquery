@@ -10,7 +10,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func help(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func help(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	commandNames := make([]string, 0)
 	for k, _ := range CommandMap {
 		commandNames = append(commandNames, k)

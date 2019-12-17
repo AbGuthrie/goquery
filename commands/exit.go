@@ -9,7 +9,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func exit(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func exit(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	fmt.Printf("Goodbye!\n")
 	os.Exit(0)
 	return errRuntimeError

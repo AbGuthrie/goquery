@@ -12,7 +12,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 )
 
-func query(api models.GoQueryAPI, config config.Config, cmdline string) error {
+func query(api models.GoQueryAPI, config *config.Config, cmdline string) error {
 	host, err := hosts.GetCurrentHost()
 	if err != nil {
 		return fmt.Errorf("No host is currently connected: %s", err)
