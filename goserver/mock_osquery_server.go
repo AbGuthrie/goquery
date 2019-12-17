@@ -395,13 +395,17 @@ func main() {
 			panic(err)
 		}
 
-		samlSP, _ := samlsp.New(samlsp.Options{
+		samlSP, err := samlsp.New(samlsp.Options{
 			URL:               *rootURL,
 			Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
 			Certificate:       keyPair.Leaf,
 			IDPMetadataURL:    idpMetadataURL,
 			AllowIDPInitiated: true,
 		})
+
+		if err != nil {
+			panic(err)
+		}
 
 		// Add to service to IDP for some reason happens via client call
 		fmt.Printf("Registering ourselves with the IDP Service\n")
