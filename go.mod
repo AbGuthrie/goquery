@@ -2,6 +2,7 @@ module github.com/AbGuthrie/goquery
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.0
+	github.com/aws/aws-sdk-go v1.26.8 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/crewjam/saml v0.0.0-20190521120225-344d075952c9

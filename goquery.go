@@ -18,6 +18,14 @@ var apiInstance models.GoQueryAPI
 var options config.Config
 
 // Run is the entry point for a file impporting the goquery library to start the prompt REPL
+func RunWithExternalCommands(api models.GoQueryAPI, _config config.Config, _externalCommandMap map[string]commands.GoQueryCommand) {
+	for k, v := range _externalCommandMap {
+		commands.CommandMap[k] = v
+	}
+	Run(api, _config)
+}
+
+// Run is the entry point for a file impporting the goquery library to start the prompt REPL
 func Run(api models.GoQueryAPI, _config config.Config) {
 	// Print errors/warnings with provided aliases, and print state of debug flags
 	_config.Validate()

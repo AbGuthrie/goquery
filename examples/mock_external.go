@@ -11,9 +11,12 @@ import (
 
 	"github.com/AbGuthrie/goquery"
 	"github.com/AbGuthrie/goquery/api/mock"
+	"github.com/AbGuthrie/goquery/commands"
 	"github.com/AbGuthrie/goquery/config"
 	"github.com/AbGuthrie/goquery/hosts"
 	"github.com/AbGuthrie/goquery/models"
+
+	prompt "github.com/c-bata/go-prompt"
 )
 
 func parseConfigOverride(args []string) (string, error) {
@@ -66,6 +69,19 @@ func loadUserConfig() (config.Config, error) {
 	return *decoded, nil
 }
 
+func externalExample(api models.GoQueryAPI, config *config.Config, cmdline string) error {
+	fmt.Println("Greetings from an external command!")
+	return nil
+}
+
+func externalExampleHelp() string {
+	return "Example external command from outside goquery"
+}
+
+func externalExampleSuggest(cmdline string) []prompt.Suggest {
+	return []prompt.Suggest{}
+}
+
 func main() {
 	// 1. Provide something that implements the required models/GoQueryAPI interface,
 	//	  or use a supported built in (see `api/mock` for example implementation)
@@ -97,8 +113,13 @@ func main() {
 			},
 		}
 	}
+	commandMap := map[string]commands.GoQueryCommand{
+		".external": commands.GoQueryCommand{externalExample, externalExampleHelp, externalExampleSuggest},
+		// Possible command that could be used to pull a file from a machine
+		//".get": commands.GoQueryCommand{get, getHelp, getSuggest},
+	}
 	// 3. Call goquery
-	goquery.Run(api, cfg)
+	goquery.RunWithExternalCommands(api, cfg, commandMap)
 }
 
 type myCustomAPI struct {
