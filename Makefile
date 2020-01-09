@@ -24,5 +24,9 @@ mock:
 	mkdir -p build/
 	go build -o build/mock_goquery examples/mock.go
 
+mock-external:
+	mkdir -p build/
+	go build -o build/mock_external_goquery examples/mock_external.go
+
 clean:
 	rm -rf build/
