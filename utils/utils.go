@@ -14,8 +14,7 @@ func PrettyPrintQueryResults(results models.Rows, printMode config.PrintModeEnum
 		prettyPrintQueryResultsJSON(results)
 	case config.PrintLine:
 		prettyPrintQueryResultsLines(results)
-	case config.PrintPretty:
-		prettyPrintQueryResultsPretty(results)
 	default:
+		prettyPrintQueryResultsPretty(results)
 	}
 }
