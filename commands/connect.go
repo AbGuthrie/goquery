@@ -46,7 +46,7 @@ func connect(api models.GoQueryAPI, config *config.Config, cmdline string) error
 			tables = append(tables, table)
 		}
 	}
-	hosts.SetHostTables(uuid, tables)
+	hosts.SetHostTables(host.UUID, tables)
 
 	return nil
 }
