@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/config"
-	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/v2/config"
+	"github.com/AbGuthrie/goquery/v2/models"
 
 	prompt "github.com/c-bata/go-prompt"
 )

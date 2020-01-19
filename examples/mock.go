@@ -9,11 +9,11 @@ import (
 	"os/user"
 	"path"
 
-	"github.com/AbGuthrie/goquery"
-	"github.com/AbGuthrie/goquery/api/mock"
-	"github.com/AbGuthrie/goquery/config"
-	"github.com/AbGuthrie/goquery/hosts"
-	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/v2"
+	"github.com/AbGuthrie/goquery/v2/api/mock"
+	"github.com/AbGuthrie/goquery/v2/config"
+	"github.com/AbGuthrie/goquery/v2/hosts"
+	"github.com/AbGuthrie/goquery/v2/models"
 )
 
 func parseConfigOverride(args []string) (string, error) {
