@@ -14,9 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/v2/models"
 
-	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/v2/hosts"
 
 	"golang.org/x/crypto/ssh/terminal"
 )

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/AbGuthrie/goquery/hosts"
+	"github.com/AbGuthrie/goquery/v2/hosts"
 )
 
 // GoQueryAPI defines the set of functions needed for goquery to interface with a backend

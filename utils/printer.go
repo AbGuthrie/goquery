@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/v2/models"
 )
 
 func prettyPrintQueryResultsJSON(results models.Rows) {

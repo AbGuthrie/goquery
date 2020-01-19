@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AbGuthrie/goquery/config"
-	"github.com/AbGuthrie/goquery/hosts"
-	"github.com/AbGuthrie/goquery/models"
-	"github.com/AbGuthrie/goquery/utils"
+	"github.com/AbGuthrie/goquery/v2/config"
+	"github.com/AbGuthrie/goquery/v2/hosts"
+	"github.com/AbGuthrie/goquery/v2/models"
+	"github.com/AbGuthrie/goquery/v2/utils"
 
 	prompt "github.com/c-bata/go-prompt"
 )

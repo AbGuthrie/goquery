@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/v2/models"
 )
 
 // ScheduleQueryAndWait schedules the provided query with the proved API, and implements blocking

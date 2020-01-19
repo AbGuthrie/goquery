@@ -2,8 +2,8 @@
 package utils
 
 import (
-	"github.com/AbGuthrie/goquery/config"
-	"github.com/AbGuthrie/goquery/models"
+	"github.com/AbGuthrie/goquery/v2/config"
+	"github.com/AbGuthrie/goquery/v2/models"
 )
 
 // PrettyPrintQueryResults prints a given []result map set to standard out
