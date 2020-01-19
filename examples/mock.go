@@ -56,11 +56,11 @@ func loadUserConfig() (config.Config, error) {
 	configPath := findUserConfig()
 	configBytes, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		fmt.Printf("Unable to read config file: %s at path %s\n", err, configPath)
+		return config.Config{}, fmt.Errorf("unable to read config file: %s at path %s", err, configPath)
 	}
 	decoded := &config.Config{}
 	if err := json.Unmarshal(configBytes, &decoded); err != nil {
-		fmt.Printf("Unable to parse config file: %s at path %s\n", err, configPath)
+		return config.Config{}, fmt.Errorf("unable to parse config file: %s at path %s", err, configPath)
 	}
 
 	return *decoded, nil
