@@ -136,7 +136,7 @@ func completer(in prompt.Document) []prompt.Suggest {
 				if len(description) == 0 {
 					description = alias.Command
 				}
-				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: alias.Command})
+				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: description})
 			} else if command, ok := commands.CommandMap[suggestion]; ok {
 				prompts = append(prompts, prompt.Suggest{Text: suggestion, Description: command.Help()})
 			}
