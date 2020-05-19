@@ -184,8 +184,8 @@ func (u uptycsAPI) CheckHost(uuid string) (hosts.Host, error) {
 		return retVal, err
 	}
 	/*
-		u is not a good way to do u, but it seemed a better idea at the
-		time than making the following realtime query:
+		this is not a good way to get the current user, but it seemed like a
+		better idea at the time than making the following realtime query:
 			SELECT user || ' (' || tty || ')' FROM logged_in_users
 			WHERE type = 'user'
 			and upt_asset_id = '%s'
@@ -196,8 +196,8 @@ func (u uptycsAPI) CheckHost(uuid string) (hosts.Host, error) {
 }
 
 /*
-	This is a dirty hack that will make memory expand per query due to it's design.
-	Uptycs currently does not have a way to schedule queries on an individuall host.
+	This is a dirty hack that will make memory expand per query due to its design.
+	Uptycs currently does not have a way to schedule queries on an individual host.
 	So, instead, we make a realtime query, and store the result in a map with a UUID
 	as a key, then return that as the "result".
 */
