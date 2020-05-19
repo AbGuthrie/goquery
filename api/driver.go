@@ -10,6 +10,7 @@ import (
 	"github.com/AbGuthrie/goquery/api/mock"
 	"github.com/AbGuthrie/goquery/api/models"
 	"github.com/AbGuthrie/goquery/api/osctrl"
+	"github.com/AbGuthrie/goquery/api/uptycs"
 	"github.com/AbGuthrie/goquery/utils"
 
 	"github.com/AbGuthrie/goquery/hosts"
@@ -32,6 +33,13 @@ func InitializeAPI(apiName string) error {
 		instance, err := osctrl.Initialize()
 		if err != nil {
 			return fmt.Errorf("Error initializing osctrl API %s", err)
+		}
+		api = instance
+		break
+	case "uptycs":
+		instance, err := uptycs.Initialize()
+		if err != nil {
+			return fmt.Errorf("Error initializing uptycs API %s", err)
 		}
 		api = instance
 		break
