@@ -34,7 +34,7 @@ type uptycsConfig struct {
 	Key        string    `json:"key"`
 }
 
-type uptycsAPI struct {
+type UptycsAPI struct {
 	Authed        bool
 	defaultReqObj *http.Request
 	httpClient    *http.Client
@@ -42,7 +42,7 @@ type uptycsAPI struct {
 }
 
 var (
-	scheduleQueryTemplate = "{\"type\":\"realtime\",\"query\":\"%s\",\"filtering\":{\"filters\":{\"id\":{\"equals\":\"%s\"}}}}"
+	scheduleQueryTemplate = `{"type":"realtime","query":"%s","filtering":{"filters":{"id":{"equals":"%s"}}}}"`
 	db                    map[string]string
 )
 
@@ -68,9 +68,9 @@ func credentials() (*uptycsConfig, error) {
 	return cfg, nil
 }
 
-// Initialize creates an authenticated instance of the `uptycsAPI` object
-func Initialize() (models.GoQueryAPI, error) {
-	retVal := uptycsAPI{}
+// CreateUptycsAPI creates an authenticated instance of the `UptycsAPI` object
+func CreateUptycsAPI() (models.GoQueryAPI, error) {
+	retVal := UptycsAPI{}
 	cfg, err := credentials()
 	if err != nil {
 		return retVal, err
@@ -110,7 +110,7 @@ func Initialize() (models.GoQueryAPI, error) {
 	interface implementation
 */
 
-func (u uptycsAPI) doHTTPReq(req *http.Request) (string, error) {
+func (u UptycsAPI) doHTTPReq(req *http.Request) (string, error) {
 	if config.GetDebug() {
 		reqBytes, err := httputil.DumpRequest(req, true)
 		if err != nil {
@@ -139,7 +139,7 @@ func (u uptycsAPI) doHTTPReq(req *http.Request) (string, error) {
 	return string(respData), err
 }
 
-func (u uptycsAPI) getAssetInfo(uuid string) (string, error) {
+func (u UptycsAPI) getAssetInfo(uuid string) (string, error) {
 	req := u.defaultReqObj.Clone(context.TODO())
 	req.URL.Path = fmt.Sprintf(
 		"%s/assets/%s", req.URL.Path, uuid,
@@ -147,7 +147,7 @@ func (u uptycsAPI) getAssetInfo(uuid string) (string, error) {
 	return u.doHTTPReq(req)
 }
 
-func (u uptycsAPI) getUsers(uuid string) (string, error) {
+func (u UptycsAPI) getUsers(uuid string) (string, error) {
 	req := u.defaultReqObj.Clone(context.TODO())
 	req.URL.Path = fmt.Sprintf(
 		"%s/assets/%s/user", req.URL.Path, uuid,
@@ -155,13 +155,13 @@ func (u uptycsAPI) getUsers(uuid string) (string, error) {
 	return u.doHTTPReq(req)
 }
 
-func (u uptycsAPI) CheckHost(uuid string) (hosts.Host, error) {
+func (u UptycsAPI) CheckHost(uuid string) (hosts.Host, error) {
 	retVal := hosts.Host{
 		UUID:             uuid,
 		CurrentDirectory: "/",
 	}
 	if !u.Authed {
-		return retVal, errors.New("Error, uptycsAPI object is not yet initialized")
+		return retVal, errors.New("Error, UptycsAPI object is not yet initialized")
 	}
 	queryResult, err := u.getAssetInfo(uuid)
 	if err != nil {
@@ -201,9 +201,9 @@ func (u uptycsAPI) CheckHost(uuid string) (hosts.Host, error) {
 	So, instead, we make a realtime query, and store the result in a map with a UUID
 	as a key, then return that as the "result".
 */
-func (u uptycsAPI) ScheduleQuery(uuid string, query string) (string, error) {
+func (u UptycsAPI) ScheduleQuery(uuid string, query string) (string, error) {
 	if !u.Authed {
-		return "", errors.New("Error, uptycsAPI object is not yet initialized")
+		return "", errors.New("Error, UptycsAPI object is not yet initialized")
 	}
 	finalBodyString := fmt.Sprintf(scheduleQueryTemplate, query, uuid)
 	req := u.defaultReqObj.Clone(context.TODO())
@@ -225,7 +225,7 @@ func (u uptycsAPI) ScheduleQuery(uuid string, query string) (string, error) {
 	return queryUUID, nil
 }
 
-func (u uptycsAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
+func (u UptycsAPI) FetchResults(queryName string) ([]map[string]string, string, error) {
 	retVal := []map[string]string{}
 	queryResult, ok := db[queryName]
 	if !ok {
