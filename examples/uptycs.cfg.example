@@ -1,0 +1,21 @@
+{
+    "debugEnabled": false,
+    "apiDriver": "uptycs",
+    "experimental": false,
+    "printMode": "pretty",
+    "uptCfgPath": "",
+    "aliases": {
+        ".quit": {
+            "description": "Exit goquery",
+            "command": ".exit"
+        },
+        ".all": {
+            "description": "Select everything from a table",
+            "command": ".query select * from $#"
+        },
+        ".si": {
+            "description": "System info",
+            "command": ".all system_info"
+        }
+    }
+}
