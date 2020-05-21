@@ -1,17 +1,17 @@
 package uptycs
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
+	"net/http/httputil"
 	"strings"
 	"time"
 
+	"github.com/AbGuthrie/goquery/v2/config"
 	"github.com/AbGuthrie/goquery/v2/hosts"
 	"github.com/AbGuthrie/goquery/v2/models"
 	"github.com/dgrijalva/jwt-go"
@@ -32,11 +32,17 @@ type uptycsConfig struct {
 	Key        string    `json:"key"`
 }
 
+type GoqueryConfig struct {
+	GoqueryConfig config.Config `json:"goqueryCfg"`
+	UptCfgPath    string        `json:"uptCfgPath"`
+}
+
 type UptycsAPI struct {
 	Authed        bool
 	defaultReqObj *http.Request
 	httpClient    *http.Client
 	uptCfg        *uptycsConfig
+	DebugMode     bool
 }
 
 var (
@@ -48,12 +54,7 @@ var (
 	helper functions
 */
 
-func credentials() (*uptycsConfig, error) {
-	fmt.Println("Enter path to Uptycs credentials file")
-	confFilePath, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		return nil, fmt.Errorf("Error reading filepath value: %s", err)
-	}
+func loadCredentials(confFilePath string) (*uptycsConfig, error) {
 	confFilePath = strings.TrimSpace(confFilePath)
 	confFileContent, err := ioutil.ReadFile(confFilePath)
 	if err != nil {
@@ -66,10 +67,32 @@ func credentials() (*uptycsConfig, error) {
 	return cfg, nil
 }
 
+func debugHTTPRequest(req *http.Request) {
+	reqBytes, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		fmt.Println("--- DEBUG ERROR: error printing HTTP request object ---")
+		return
+	}
+	fmt.Println("--- HTTP REQ ---")
+	fmt.Println(string(reqBytes))
+	fmt.Println("")
+}
+
+func debugHTTPResponse(resp *http.Response) {
+	respBytes, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		fmt.Println("--- DEBUG ERROR: error printing HTTP response object ---")
+		return
+	}
+	fmt.Println("--- HTTP RESP ---")
+	fmt.Println(string(respBytes))
+	fmt.Println("")
+}
+
 // CreateUptycsAPI creates an authenticated instance of the `UptycsAPI` object
-func CreateUptycsAPI() (models.GoQueryAPI, error) {
-	retVal := UptycsAPI{}
-	cfg, err := credentials()
+func CreateUptycsAPI(cfg *GoqueryConfig) (models.GoQueryAPI, error) {
+	retVal := UptycsAPI{DebugMode: cfg.GoqueryConfig.DebugEnabled}
+	uptCfg, err := loadCredentials(cfg.UptCfgPath)
 	if err != nil {
 		return retVal, err
 	}
@@ -78,8 +101,8 @@ func CreateUptycsAPI() (models.GoQueryAPI, error) {
 		"GET",
 		fmt.Sprintf(
 			"https://%s.uptycs.io/public/api/customers/%s",
-			cfg.Domain,
-			cfg.CustomerID,
+			uptCfg.Domain,
+			uptCfg.CustomerID,
 		),
 		nil,
 	)
@@ -90,8 +113,8 @@ func CreateUptycsAPI() (models.GoQueryAPI, error) {
 		)
 	}
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss": cfg.Key,
-	}).SignedString([]byte(cfg.Secret))
+		"iss": uptCfg.Key,
+	}).SignedString([]byte(uptCfg.Secret))
 	if err != nil {
 		return retVal, fmt.Errorf("Error creating bearer token: %s", err)
 	}
@@ -109,32 +132,16 @@ func CreateUptycsAPI() (models.GoQueryAPI, error) {
 */
 
 func (u UptycsAPI) doHTTPReq(req *http.Request) (string, error) {
-	// FOR DEBUG
-	/*
-		reqBytes, err := httputil.DumpRequest(req, true)
-		if err != nil {
-			return "", nil
-		}
-		fmt.Println("--- HTTP REQ ---")
-		fmt.Println(string(reqBytes))
-	*/
-
+	if u.DebugMode {
+		debugHTTPRequest(req)
+	}
 	resp, err := u.httpClient.Do(req)
 	if err != nil {
 		return "", nil
 	}
-
-	// FOR DEBUG
-	/*
-		respBytes, err := httputil.DumpResponse(resp, true)
-		if err != nil {
-			return "", nil
-		}
-		fmt.Println("--- HTTP RESP ---")
-		fmt.Println(string(respBytes))
-		fmt.Println("")
-	*/
-
+	if u.DebugMode {
+		debugHTTPResponse(resp)
+	}
 	respData, err := ioutil.ReadAll(resp.Body)
 	return string(respData), err
 }

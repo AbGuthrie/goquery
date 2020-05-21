@@ -10,7 +10,6 @@ import (
 
 	"github.com/AbGuthrie/goquery/v2"
 	"github.com/AbGuthrie/goquery/v2/api/uptycs"
-	"github.com/AbGuthrie/goquery/v2/config"
 )
 
 func parseConfigOverride(args []string) (string, error) {
@@ -42,13 +41,13 @@ func findUserConfig() string {
 	return configPath
 }
 
-func loadUserConfig() (config.Config, error) {
+func loadUserConfig() (uptycs.GoqueryConfig, error) {
 	configPath := findUserConfig()
 	configBytes, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		fmt.Printf("Unable to read config file: %s at path %s\n", err, configPath)
 	}
-	decoded := &config.Config{}
+	decoded := &uptycs.GoqueryConfig{}
 	if err := json.Unmarshal(configBytes, &decoded); err != nil {
 		fmt.Printf("Unable to parse config file: %s at path %s\n", err, configPath)
 	}
@@ -56,25 +55,19 @@ func loadUserConfig() (config.Config, error) {
 }
 
 func main() {
-	api, err := uptycs.CreateUptycsAPI()
+	cfg, err := loadUserConfig()
+	if err != nil {
+		panic(
+			fmt.Errorf(
+				"Couldn't load user config because of error: %s\n",
+				err,
+			),
+		)
+	}
+	api, err := uptycs.CreateUptycsAPI(&cfg)
 	if err != nil {
 		fmt.Printf("Encountered an error starting API: %s\n", err)
 		return
 	}
-	cfg, err := loadUserConfig()
-	if err != nil {
-		fmt.Printf("Couldn't load user config because of error: %s\n", err)
-		fmt.Println("Using defaults")
-		cfg = config.Config{
-			PrintMode:    "pretty",
-			DebugEnabled: true,
-			Aliases: map[string]config.Alias{
-				".all": config.Alias{
-					Description: "Select everything from a table",
-					Command:     ".query select * from $#",
-				},
-			},
-		}
-	}
-	goquery.Run(api, cfg)
+	goquery.Run(api, cfg.GoqueryConfig)
 }
