@@ -32,5 +32,5 @@ func InterpolateArguments(rawLine string, command string) (string, error) {
 		realizedCommand += arg
 	}
 
-	return realizedCommand, nil
+	return realizedCommand + placeholderParts[len(placeholderParts)-1], nil
 }
