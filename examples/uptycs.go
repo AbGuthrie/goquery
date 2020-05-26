@@ -64,7 +64,7 @@ func main() {
 			),
 		)
 	}
-	api, err := uptycs.CreateUptycsAPI(&cfg)
+	api, err := uptycs.CreateUptycsAPI(cfg.UptCfgPath, cfg.GoqueryConfig.DebugEnabled)
 	if err != nil {
 		fmt.Printf("Encountered an error starting API: %s\n", err)
 		return

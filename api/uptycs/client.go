@@ -90,13 +90,15 @@ func debugHTTPResponse(resp *http.Response) {
 }
 
 // CreateUptycsAPI creates an authenticated instance of the `UptycsAPI` object
-func CreateUptycsAPI(cfg *GoqueryConfig) (models.GoQueryAPI, error) {
-	retVal := UptycsAPI{DebugMode: cfg.GoqueryConfig.DebugEnabled}
-	uptCfg, err := loadCredentials(cfg.UptCfgPath)
+func CreateUptycsAPI(uptCfgPath string, debugEnabled bool) (models.GoQueryAPI, error) {
+	retVal := UptycsAPI{DebugMode: debugEnabled}
+	uptCfg, err := loadCredentials(uptCfgPath)
 	if err != nil {
 		return retVal, err
 	}
-	retVal.httpClient = &http.Client{}
+	retVal.httpClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
 	retVal.defaultReqObj, err = http.NewRequest(
 		"GET",
 		fmt.Sprintf(
