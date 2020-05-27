@@ -51,7 +51,7 @@ func Register(newHost Host) error {
 	for i, host := range connectedHosts {
 		if newHost.UUID == host.UUID {
 			currentHostIndex = i
-			return nil
+			return fmt.Errorf("Active Host Switched")
 		}
 	}
 	connectedHosts = append(connectedHosts, newHost)

@@ -25,8 +25,9 @@ func connect(api models.GoQueryAPI, config *config.Config, cmdline string) error
 
 	// All is good, update hosts state
 	if err := hosts.Register(host); err != nil {
-		return fmt.Errorf("Error connecting to host: %s", err)
+		return err
 	}
+
 	fmt.Printf("Verified Host(%s) Exists.\n", uuid)
 
 	results, err := utils.ScheduleQueryAndWait(
